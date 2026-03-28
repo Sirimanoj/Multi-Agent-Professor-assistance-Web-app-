@@ -1,0 +1,23 @@
+{
+  "projectName": "The Academic Atelier",
+  "screens": [
+    {
+      "id": "1",
+      "title": "Professor Dashboard",
+      "description": "Comprehensive teaching view featuring automated Syllabus ingestion, single-click Assignment generation, and real-time class statistics all mapped elegantly without rigid lines.",
+      "imagePath": "assets/screens/professor.png",
+      "width": 1440,
+      "height": 900,
+      "duration": 6
+    },
+    {
+      "id": "2",
+      "title": "Student Dashboard",
+      "description": "Student portal emphasizing coursework submission, urgency toggles, and seamless integration with the generative RAG assistant for study guidance.",
+      "imagePath": "assets/screens/student.png",
+      "width": 1440,
+      "height": 900,
+      "duration": 6
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Professor Atelier | Luminous Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#5D3FD3",
+              "secondary": "#7C3AED",
+              "accent": "#C084FC",
+              "surface-container-lowest": "#ffffff",
+              "background": "#FDFDFF",
+            },
+            fontFamily: {
+              "headline": ["Newsreader", "serif"],
+              "body": ["Manrope", "sans-serif"],
+              "label": ["Manrope", "sans-serif"]
+            },
+            boxShadow: {
+              'luminous': '0 10px 40px -10px rgba(93, 63, 211, 0.12), 0 0 20px -5px rgba(93, 63, 211, 0.05)',
+              'elevated': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+              'soft-3d': 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 10px 30px -5px rgba(0, 0, 0, 0.03)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      body {
+        font-family: 'Manrope', sans-serif;
+        background-color: #FDFDFF;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+      }
+      .luminous-glow {
+        box-shadow: 0 0 20px rgba(93, 63, 211, 0.15);
+      }
+      .soft-depth {
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      }
+    </style>
+</head>
+<body class="text-slate-900 selection:bg-violet-100 selection:text-violet-900 overflow-x-hidden">
+<!-- SideNavBar: Using shared component aesthetic from {{DATA:COMPONENTS:COMPONENTS_15}} -->
+<aside class="fixed left-6 top-6 bottom-6 w-64 bg-white/80 backdrop-blur-2xl rounded-[2rem] shadow-[0px_10px_40px_rgba(93,63,211,0.08)] border border-slate-100/50 z-40 flex flex-col p-6 space-y-8">
+<div class="px-2">
+<h1 class="font-headline text-xl font-bold text-slate-900 tracking-tight">Professor Atelier</h1>
+<p class="font-label text-[10px] font-extrabold tracking-[0.2em] text-violet-500 uppercase mt-1">Multi-Agent Research Lab</p>
+</div>
+<nav class="flex flex-col gap-1 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+<a class="flex items-center gap-3 px-4 py-3 bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-semibold rounded-2xl shadow-[0px_10px_20px_rgba(93,63,211,0.25)] transition-all duration-300 transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-label">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="school">school</span>
+<span class="text-sm font-label">Classrooms</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu_book">menu_book</span>
+<span class="text-sm font-label">Course Materials</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit_note">edit_note</span>
+<span class="text-sm font-label">Syllabus Editor</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="assignment">assignment</span>
+<span class="text-sm font-label">Assignments</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="quiz">quiz</span>
+<span class="text-sm font-label">Exams</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="rule">rule</span>
+<span class="text-sm font-label">Rubrics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="insights">insights</span>
+<span class="text-sm font-label">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-violet-600 transition-all rounded-2xl hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="text-sm font-label">Settings</span>
+</a>
+</nav>
+<div class="pt-4">
+<button class="w-full bg-slate-900 text-white font-label font-bold py-4 rounded-2xl shadow-xl shadow-slate-200 hover:shadow-slate-300 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group">
+<span class="material-symbols-outlined text-lg group-hover:rotate-90 transition-transform duration-300" data-icon="add">add</span>
+            New Course
+        </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-72 mr-[26rem] min-h-screen py-8 pr-8">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-8 py-4 mb-8 bg-white/50 backdrop-blur-xl rounded-[2rem] shadow-[0px_4px_20px_rgba(44,47,49,0.04)] border border-white/50">
+<div class="flex items-center gap-8">
+<h2 class="text-2xl font-black tracking-tighter text-slate-900">Academia</h2>
+<div class="bg-slate-100/50 px-5 py-2 rounded-2xl flex items-center gap-3 border border-slate-200/20 group focus-within:bg-white focus-within:shadow-soft-3d transition-all">
+<span class="material-symbols-outlined text-slate-400 text-lg" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-medium w-48 placeholder:text-slate-400" placeholder="Search archive..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 px-4 py-1.5 bg-violet-50 rounded-full border border-violet-100">
+<div class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
+<span class="text-violet-700 font-label text-[11px] font-bold uppercase tracking-wider">2 Agents Active</span>
+</div>
+<div class="flex items-center gap-4 text-slate-400">
+<button class="hover:bg-slate-100 p-2.5 rounded-xl transition-all relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<div class="h-10 w-10 rounded-2xl overflow-hidden border-2 border-white shadow-soft-3d group cursor-pointer">
+<img alt="User profile" class="w-full h-full object-cover transition-transform group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBvKIhwEzZd8rGo2A2pHdzpm6ek-A60UL7-MAF10eHWW5K4Qtp73g13h0ZaxPYjwvyWIMJ8OptuveaWU1pxAv3c2WGWQYQFgZgnTikb5CgK1VXKlxqqtFyWzCke0ZHEfOUUm1wjORQrnoT2NEPlv0tbiQGKHuqsJXns2FGYm036EIVKiksxo8IqAjiNwJzzroQ2gmX_tA8erhZOypg8E961kyo0RFSwuxL-UF9SdhNCtpmFysr_WWEpF_h0l6zpmRKrRewNXjZRMSI"/>
+</div>
+</div>
+</div>
+</header>
+<div class="space-y-12">
+<!-- Hero Section: Retaining existing large welcome hero -->
+<section class="relative overflow-hidden rounded-[2.5rem] p-12 flex flex-col justify-end min-h-[380px] bg-slate-900 shadow-2xl">
+<img alt="Academy Background" class="absolute inset-0 w-full h-full object-cover opacity-50 scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTlWno2fOZuqSsXqzrKKvyCUPrt1g7tL8xPMJPmSwO677OR2XQ3Y1g3hiKejwutEkEkQFO0tIs-liZpf_y0lPfINP-wGo8zM2hMIyYAHnopA3X_wcOpJo-u9pzt7EZxHdtIdkOoK0u9bPoV2SU5oLVAwhp9X-IhFOebwVcUW73y3ktsRDA5zK9Nrtg-UMH3LM7zDhUPFFzDE3_9t4PvEwquJbE2O_p9Ig3pagVuWgRS_9tAdyr6khVOnNqQpoKyBdnRvy5fiFip2Qt"/>
+<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+<div class="relative z-10 max-w-3xl">
+<p class="font-label text-violet-300 text-xs font-black tracking-[0.3em] uppercase mb-4">Welcome Back, Professor</p>
+<h1 class="font-headline text-5xl text-white font-medium leading-tight tracking-tight">Your Digital Atelier is primed for the next semester.</h1>
+<div class="mt-8 flex gap-4">
+<button class="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-label font-bold text-sm shadow-[0px_20px_40px_rgba(255,255,255,0.15)] hover:bg-slate-50 hover:-translate-y-1 transition-all">Resume Syllabus Review</button>
+<button class="bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded-2xl font-label font-bold text-sm backdrop-blur-md hover:bg-white/20 hover:-translate-y-1 transition-all">View Research Log</button>
+</div>
+</div>
+</section>
+<!-- Summary Cards: Asymmetric Layout with Luminous Styling -->
+<section class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-5 bg-white p-10 rounded-[2.5rem] soft-depth border border-slate-50 relative group hover:shadow-luminous transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="bg-violet-50 text-violet-600 p-4 rounded-2xl shadow-sm border border-violet-100">
+<span class="material-symbols-outlined text-2xl" data-icon="school">school</span>
+</div>
+<span class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full">Fall 2024</span>
+</div>
+<h3 class="font-headline text-4xl text-slate-900 mb-2">4 Active Classes</h3>
+<p class="font-label text-sm text-slate-500 mb-8 leading-relaxed">Engaging 142 students across three specialized disciplines.</p>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-transparent hover:border-violet-100 hover:bg-white transition-all cursor-default">
+<span class="text-sm font-semibold text-slate-700">Advanced Semiotics</span>
+<span class="px-3 py-1 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">32 STUDENTS</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-transparent hover:border-violet-100 hover:bg-white transition-all cursor-default">
+<span class="text-sm font-semibold text-slate-700">Epistemology of AI</span>
+<span class="px-3 py-1 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">48 STUDENTS</span>
+</div>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-8">
+<div class="bg-gradient-to-br from-violet-600 to-indigo-700 p-10 rounded-[2.5rem] shadow-[0px_20px_40px_rgba(93,63,211,0.2)] relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-700">
+<span class="material-symbols-outlined text-[10rem] text-white" data-icon="grade">grade</span>
+</div>
+<h4 class="font-headline text-white/80 text-xl mb-3">Pending Grading</h4>
+<div class="flex items-baseline gap-2">
+<span class="text-6xl font-headline text-white font-bold">12</span>
+<span class="text-white/60 text-sm font-label font-bold uppercase tracking-wider">submissions</span>
+</div>
+<div class="mt-10">
+<button class="bg-white text-violet-700 text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:bg-slate-50 transition-all">Grade Now</button>
+</div>
+</div>
+<div class="bg-white p-10 rounded-[2.5rem] soft-depth border border-slate-50 hover:shadow-luminous transition-all duration-500">
+<h4 class="font-headline text-slate-900 text-xl mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-violet-600 bg-violet-50 p-2 rounded-xl" data-icon="smart_toy">smart_toy</span>
+                        AI Suggestions
+                    </h4>
+<ul class="space-y-5">
+<li class="flex gap-4 group">
+<div class="w-1.5 h-1.5 rounded-full bg-violet-500 mt-2 flex-shrink-0 group-hover:scale-150 transition-transform"></div>
+<p class="text-xs font-medium text-slate-600 leading-relaxed">Update Week 6 readings with the new J-STOR release on <span class="text-violet-600 font-bold">Cognitive Ethics</span>.</p>
+</li>
+<li class="flex gap-4 group">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0 group-hover:bg-violet-400 group-hover:scale-150 transition-transform"></div>
+<p class="text-xs font-medium text-slate-500 leading-relaxed"><span class="font-bold text-slate-600">3 students</span> showing drop in engagement. Suggest personalized quiz.</p>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Action Grid: Modern Soft Card Aesthetic -->
+<section>
+<div class="flex items-baseline justify-between mb-8">
+<h2 class="font-headline text-3xl text-slate-900">Atelier Operations</h2>
+<span class="font-label text-xs font-black text-slate-400 uppercase tracking-widest">Quick access to lab tools</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+<button class="flex flex-col items-center justify-center p-10 bg-white rounded-[2rem] soft-depth hover:shadow-luminous transition-all duration-300 group border border-transparent hover:border-violet-100 hover:-translate-y-1">
+<span class="material-symbols-outlined text-4xl text-violet-600 mb-6 group-hover:scale-110 transition-transform" data-icon="add_box">add_box</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-violet-700 transition-colors">Create Classroom</span>
+</button>
+<button class="flex flex-col items-center justify-center p-10 bg-white rounded-[2rem] soft-depth hover:shadow-luminous transition-all duration-300 group border border-transparent hover:border-violet-100 hover:-translate-y-1">
+<span class="material-symbols-outlined text-4xl text-violet-600 mb-6 group-hover:scale-110 transition-transform" data-icon="upload_file">upload_file</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-violet-700 transition-colors">Upload Materials</span>
+</button>
+<button class="flex flex-col items-center justify-center p-10 bg-white rounded-[2rem] soft-depth hover:shadow-luminous transition-all duration-300 group border border-transparent hover:border-violet-100 hover:-translate-y-1">
+<span class="material-symbols-outlined text-4xl text-violet-600 mb-6 group-hover:scale-110 transition-transform" data-icon="history_edu">history_edu</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-violet-700 transition-colors">Grade Work</span>
+</button>
+<button class="flex flex-col items-center justify-center p-10 bg-white rounded-[2rem] soft-depth hover:shadow-luminous transition-all duration-300 group border border-transparent hover:border-violet-100 hover:-translate-y-1">
+<span class="material-symbols-outlined text-4xl text-violet-600 mb-6 group-hover:scale-110 transition-transform" data-icon="analytics">analytics</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-violet-700 transition-colors text-center">Data Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center p-10 bg-white rounded-[2rem] soft-depth hover:shadow-luminous transition-all duration-300 group border border-transparent hover:border-violet-100 hover:-translate-y-1">
+<span class="material-symbols-outlined text-4xl text-violet-600 mb-6 group-hover:scale-110 transition-transform" data-icon="psychology">psychology</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-violet-700 transition-colors">AI Personality</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+<!-- Integrated AI Chat Panel (Fixed Right) -->
+<aside class="fixed right-6 top-6 bottom-6 w-[24rem] bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-[0px_20px_60px_rgba(0,0,0,0.08)] z-40 flex flex-col border border-white overflow-hidden">
+<div class="p-8 border-b border-slate-50 bg-white/50 flex items-center justify-between">
+<div>
+<h3 class="font-headline text-xl text-slate-900 font-bold">Knowledge Agent</h3>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+<p class="text-[10px] font-black text-violet-600 uppercase tracking-widest">Active Academic Support</p>
+</div>
+</div>
+<button class="p-2.5 hover:bg-slate-50 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100">
+<span class="material-symbols-outlined text-xl" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/20 custom-scrollbar">
+<!-- Message -->
+<div class="flex flex-col gap-3">
+<div class="bg-white p-5 rounded-3xl rounded-tl-none shadow-soft-3d border border-slate-100 max-w-[90%] transform transition-all hover:scale-[1.02] cursor-default">
+<p class="text-sm font-medium text-slate-700 leading-relaxed">Good morning, Professor. I've analyzed the recent student submissions for 'Epistemology of AI'. The common theme is a confusion between AGI and LLM boundaries. Shall I generate a supplemental reading list?</p>
+</div>
+<span class="text-[10px] font-black text-slate-400 ml-1 uppercase tracking-tighter">AI Agent • 08:42 AM</span>
+</div>
+<div class="flex flex-col items-end gap-3">
+<div class="bg-gradient-to-br from-violet-600 to-indigo-600 text-white p-5 rounded-3xl rounded-tr-none shadow-[0px_10px_20px_rgba(93,63,211,0.2)] max-w-[90%] transform transition-all hover:scale-[1.02] cursor-default">
+<p class="text-sm font-medium leading-relaxed">Yes, please. Focus on Heidegger's technical critique as a framework. And let's cross-reference it with contemporary transformer architecture.</p>
+</div>
+<span class="text-[10px] font-black text-slate-400 mr-1 uppercase tracking-tighter">You • 08:45 AM</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="bg-white p-5 rounded-3xl rounded-tl-none shadow-soft-3d border border-slate-100 max-w-[90%] transform transition-all hover:scale-[1.02] cursor-default">
+<p class="text-sm font-medium text-slate-700 leading-relaxed">Synthesizing... I've found 3 key papers from the 2023 Digital Humanities conference that fit this perfectly. Adding them to the Syllabus Draft now.</p>
+</div>
+<span class="text-[10px] font-black text-slate-400 ml-1 uppercase tracking-tighter">AI Agent • 08:46 AM</span>
+</div>
+</div>
+<!-- Input Section -->
+<div class="p-8 bg-white border-t border-slate-50">
+<div class="relative group">
+<textarea class="w-full bg-slate-50/50 border border-slate-100 rounded-3xl p-5 pr-14 text-sm font-medium focus:ring-4 focus:ring-violet-50 focus:border-violet-200 focus:bg-white resize-none placeholder:text-slate-400 transition-all shadow-inner" placeholder="Ask your agent anything..." rows="3"></textarea>
+<div class="absolute bottom-4 right-4 flex flex-col gap-2">
+<button class="p-2.5 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-100 active:scale-90">
+<span class="material-symbols-outlined text-xl" data-icon="send">send</span>
+</button>
+</div>
+</div>
+<div class="mt-6 flex gap-2 flex-wrap">
+<span class="px-3.5 py-1.5 bg-violet-50 text-violet-700 text-[10px] font-black rounded-full cursor-pointer hover:bg-violet-100 transition-all border border-violet-100 shadow-sm uppercase tracking-wider">Syllabus Check</span>
+<span class="px-3.5 py-1.5 bg-violet-50 text-violet-700 text-[10px] font-black rounded-full cursor-pointer hover:bg-violet-100 transition-all border border-violet-100 shadow-sm uppercase tracking-wider">Grade Analysis</span>
+<span class="px-3.5 py-1.5 bg-violet-50 text-violet-700 text-[10px] font-black rounded-full cursor-pointer hover:bg-violet-100 transition-all border border-violet-100 shadow-sm uppercase tracking-wider">Research</span>
+</div>
+</div>
+</aside>
+</body></html>
