@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
@@ -7,10 +7,21 @@ import { useAuth } from '../context/AuthContext';
 export default function CourseDetail() {
   const { course_id } = useParams();
   const { user } = useAuth();
-  const { courses, assignments, announcements, usersList, materials, studiedMaterials, markMaterialStudied, generateAdaptiveQuiz, quizzes, isGeneratingQuiz, openModal, postAnnouncement } = useApp();
+  const { courses, assignments, announcements, usersList, materials, studiedMaterials, markMaterialStudied, generateAdaptiveQuiz, quizzes, isGeneratingQuiz, openModal, setCourseContext, postAnnouncement } = useApp();
   
   const [activeTab, setActiveTab] = useState<'stream' | 'classwork' | 'people' | 'grades'>('stream');
   const [announcementText, setAnnouncementText] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [assignmentFiles, setAssignmentFiles] = useState<Record<string, File>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (course_id) {
+      setCourseContext(course_id);
+    }
+    return () => setCourseContext(null);
+  }, [course_id]);
 
   const course = courses.find(c => c.id === course_id);
 
@@ -28,6 +39,21 @@ export default function CourseDetail() {
     if (!announcementText.trim() || !user) return;
     postAnnouncement(course.id, announcementText, user.name);
     setAnnouncementText('');
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && course_id) {
+      useApp().uploadMaterial(file, course_id);
+    }
+  };
+
+  const handleAddLink = () => {
+    if (linkUrl.trim() && course_id) {
+      useApp().addLinkMaterial(linkUrl, course_id);
+      setLinkUrl('');
+      setIsAddingLink(false);
+    }
   };
 
   const getUrgencyColor = (u: string) => {
@@ -144,7 +170,43 @@ export default function CourseDetail() {
               <div className="mb-10">
                 <h2 className="text-2xl font-headline font-bold text-indigo-600 border-b-2 border-slate-100 pb-3 mb-6 flex justify-between items-end">
                   Course Materials
+                  {user?.role === 'professor' && (
+                    <div className="flex gap-2">
+                       <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        className="hidden" 
+                        accept=".pdf" 
+                      />
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-violet-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-violet-700 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm">upload</span> Upload PDF
+                      </button>
+                      <button 
+                        onClick={() => setIsAddingLink(!isAddingLink)}
+                        className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm">link</span> Add Link
+                      </button>
+                    </div>
+                  )}
                 </h2>
+
+                {isAddingLink && (
+                  <div className="mb-6 bg-slate-50 p-4 rounded-2xl flex gap-2 animate-in slide-in-from-top-2 duration-300">
+                    <input 
+                      type="url" 
+                      placeholder="Enter material URL..." 
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                      value={linkUrl}
+                      onChange={e => setLinkUrl(e.target.value)}
+                    />
+                    <button onClick={handleAddLink} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">Add</button>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {materials.filter(m => m.course_id === course_id).map(material => {
                      const isStudied = studiedMaterials.has(material.id);
@@ -179,7 +241,7 @@ export default function CourseDetail() {
                                </button>
                              ) : !quiz ? (
                                <button 
-                                 onClick={() => generateAdaptiveQuiz(material.id, material.title)}
+                                 onClick={() => generateAdaptiveQuiz(material.id, material.title, course_id!)}
                                  disabled={isGeneratingQuiz}
                                  className="flex-1 bg-indigo-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-indigo-700 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                                >
@@ -240,9 +302,36 @@ export default function CourseDetail() {
                                   </p>
                                 </div>
                               </div>
-                              <span className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${getUrgencyColor(assignment.urgency)}`}>
-                                {assignment.urgency}
-                              </span>
+                              <div className="flex items-center gap-4">
+                                {user?.role === 'student' && assignment.status === 'pending' && (
+                                  <div className="flex items-center gap-2">
+                                    <label className="bg-slate-50 hover:bg-slate-100 text-slate-500 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest cursor-pointer border border-dashed border-slate-200 transition-colors">
+                                      <span className="material-symbols-outlined text-xs align-middle mr-1">attach_file</span>
+                                      {assignmentFiles[assignment.id] ? assignmentFiles[assignment.id].name : 'Attach File'}
+                                      <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) setAssignmentFiles({...assignmentFiles, [assignment.id]: file});
+                                        }}
+                                      />
+                                    </label>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        useApp().submitAssignment(assignment.id, assignmentFiles[assignment.id]);
+                                      }}
+                                      className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all cursor-pointer shadow-md shadow-emerald-600/10"
+                                    >
+                                      Submit
+                                    </button>
+                                  </div>
+                                )}
+                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${getUrgencyColor(assignment.urgency)}`}>
+                                  {assignment.urgency}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -332,7 +421,7 @@ export default function CourseDetail() {
                           <span className="text-sm font-bold text-slate-700">{student.name}</span>
                         </div>
                       </td>
-                      {courseAssignments.map((a, idx) => (
+                      {courseAssignments.map((a) => (
                         <td key={a.id} className="p-5 text-center text-sm">
                           {a.status === 'graded' ? (
                             <span className="font-bold text-slate-700">88/100</span>

@@ -32,38 +32,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Get initial session
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const role = session.user.user_metadata?.role || null;
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0].replace('.', ' ') || '',
-          role: role,
-        });
+      try {
+        if (!supabase) {
+          throw new Error('SUPABASE_CLIENT_NOT_INITIALIZED');
+        }
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const role = session.user.user_metadata?.role || null;
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0].replace('.', ' ') || '',
+            role: role,
+          });
+        }
+      } catch (err) {
+        console.error("Auth initialization failed:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initializeAuth();
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        const role = session.user.user_metadata?.role || null;
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0].replace('.', ' ') || '',
-          role: role,
-        });
-        
-      } else {
-        setUser(null);
-      }
-    });
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+        if (session) {
+          const role = session.user.user_metadata?.role || null;
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0].replace('.', ' ') || '',
+            role: role,
+          });
+          
+        } else {
+          setUser(null);
+        }
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    }
   }, [navigate]);
 
   const signUp = async (email: string, password: string, role: 'professor' | 'student', name: string) => {

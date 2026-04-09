@@ -1,28 +1,15 @@
-import { useRef } from 'react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
 export default function Materials() {
-  const { materials, uploadMaterial, openModal } = useApp();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) uploadMaterial(file);
-  };
+  const { materials, openModal } = useApp();
 
   return (
     <Layout>
       <main className="flex-1 lg:ml-[280px] p-8 lg:p-12 space-y-12 animate-in fade-in duration-500">
-        <div className="flex justify-between items-end border-b border-slate-100 pb-6">
-          <div>
-            <h1 className="text-4xl font-headline font-medium text-slate-900 tracking-tight">Resource Library</h1>
-            <p className="text-slate-500 mt-2">All materials processed by the Syllabus Agent.</p>
-          </div>
-          <button onClick={() => fileInputRef.current?.click()} className="bg-violet-600 text-white px-5 py-2.5 rounded-xl font-bold tracking-widest text-xs uppercase shadow-lg shadow-violet-600/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer">
-            <span className="material-symbols-outlined text-sm">upload</span> Upload
-          </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx" />
+        <div className="border-b border-slate-100 pb-6">
+          <h1 className="text-4xl font-headline font-medium text-slate-900 tracking-tight">Resource Library</h1>
+          <p className="text-slate-500 mt-2">All materials processed by the Syllabus Agent across your classrooms.</p>
         </div>
 
         <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -45,7 +32,7 @@ export default function Materials() {
                   <td className="p-6">
                     <span className="bg-slate-100 px-3 py-1 rounded-lg text-xs">{mat.course_id.toUpperCase()}</span>
                   </td>
-                  <td className="p-6 text-slate-400">{mat.date_added}</td>
+                  <td className="p-6 text-slate-400">{mat.date_added.split('T')[0]}</td>
                   <td className="p-6 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={(e) => { e.stopPropagation(); openModal('formats'); }} className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold hover:bg-orange-600 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
                       <span className="material-symbols-outlined text-[14px]">view_comfy_alt</span> Formats
@@ -61,7 +48,7 @@ export default function Materials() {
               ))}
               {materials.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="p-12 text-center text-slate-400">Library is empty. Upload a document to trigger the ingestion pipeline.</td>
+                  <td colSpan={4} className="p-12 text-center text-slate-400">Library is empty. Materials uploaded to specific classrooms will appear here.</td>
                 </tr>
               )}
             </tbody>

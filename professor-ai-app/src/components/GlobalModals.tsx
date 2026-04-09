@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import QuizTaker from './QuizTaker';
 
 export default function GlobalModals() {
-  const { sendMessage, activeModal, activeQuizId, openModal, joinCourse, createCourse, generateAssignment, generateAdaptiveQuiz, submitLectureSummary, isGeneratingQuiz, isGrading, activeStudentId, profiles, usersList } = useApp();
+  const { sendMessage, activeModal, activeQuizId, activeCourseId, openModal, joinCourse, createCourse, generateAssignment, generateAdaptiveQuiz, submitLectureSummary, isGeneratingQuiz, isGrading, activeStudentId, profiles, usersList } = useApp();
   const { user } = useAuth();
   const [inputValue, setInputValue] = useState('');
   const [summaryText, setSummaryText] = useState('');
@@ -48,7 +48,10 @@ export default function GlobalModals() {
       if (user?.role === 'professor') createCourse(inputValue);
       else joinCourse(inputValue);
     } else if (activeModal === 'generate') {
-      generateAssignment(inputValue);
+      // If no active course, we choose the first one or alert
+      const targetCourseId = activeCourseId || (user?.role === 'professor' ? useApp().courses[0]?.id : null);
+      if (targetCourseId) generateAssignment(inputValue, targetCourseId);
+      else alert("Please select a classroom first.");
     }
 
     setInputValue('');
@@ -194,7 +197,10 @@ export default function GlobalModals() {
                  </button>
                </div>
              ) : (
-               <button onClick={() => generateAdaptiveQuiz('m1', 'Core Concept')} disabled={isGeneratingQuiz} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all text-sm uppercase tracking-widest flex justify-center items-center gap-2 mx-auto">
+               <button onClick={() => {
+                 const targetCourseId = activeCourseId || useApp().courses[0]?.id;
+                 if (targetCourseId) generateAdaptiveQuiz('m1', 'Core Concept', targetCourseId);
+               }} disabled={isGeneratingQuiz} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all text-sm uppercase tracking-widest flex justify-center items-center gap-2 mx-auto">
                  {isGeneratingQuiz ? <><span className="material-symbols-outlined animate-spin text-sm">sync</span> Generating Quiz...</> : 'Start Assessment'}
                </button>
              )}

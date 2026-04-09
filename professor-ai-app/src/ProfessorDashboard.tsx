@@ -25,17 +25,21 @@ export default function ProfessorDashboard() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      uploadMaterial(file);
+    if (file && courses.length > 0) {
+      uploadMaterial(file, courses[0].id);
+    } else if (file) {
+      alert("Please create a classroom first.");
     }
   };
 
   const handleLinkUpload = async () => {
     const url = prompt("Enter the Google Slides or Resource URL:");
-    if (url) {
+    if (url && courses.length > 0) {
       setIsUploadingLink(true);
-      await addLinkMaterial(url);
+      await addLinkMaterial(url, courses[0].id);
       setIsUploadingLink(false);
+    } else if (url) {
+      alert("Please create a classroom first.");
     }
   };
 

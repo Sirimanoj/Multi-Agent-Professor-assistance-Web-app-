@@ -5,7 +5,7 @@ import { useAuth } from './context/AuthContext';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 export default function StudentDashboard() {
-  const { assignments, submitAssignment, isGrading, profiles, openModal, usersList, isLoading: isAppLoading } = useApp();
+  const { courses, assignments, submitAssignment, isGrading, profiles, openModal, usersList, isLoading: isAppLoading } = useApp();
   const { user } = useAuth();
   
   if (isAppLoading || !user) {
@@ -52,7 +52,11 @@ export default function StudentDashboard() {
             <h1 className="text-6xl font-headline text-on-surface leading-tight font-medium">
               Good morning, <br/><span className="italic text-violet-600 font-bold">{user.name}.</span>
             </h1>
-            <p className="text-xl text-slate-500 max-w-xl leading-relaxed">Your research on Renaissance perspective is 85% complete. Your scholarly assistants are refining your bibliography.</p>
+            <p className="text-xl text-slate-500 max-w-xl leading-relaxed">
+              {courses.length > 0 
+                ? `You are enrolled in ${courses.length} courses. Your academic agents are currently analyzing your ${myProfile.weak_concepts[0] || 'core concepts'} progress.`
+                : "Welcome to your academic hub. Join a classroom to begin your personalized learning journey."}
+            </p>
           </div>
           
           <div className="lg:col-span-4 bg-white p-10 rounded-[2.5rem] shadow-[0_10px_30px_-5px_rgba(93,63,211,0.1)] flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden group border border-slate-50">
@@ -198,12 +202,12 @@ export default function StudentDashboard() {
                   <span className="material-symbols-outlined text-3xl">psychology</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg text-slate-800">Grading System</h4>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Macroeconomics • Automated Response</p>
+                  <h4 className="font-bold text-lg text-slate-800">Knowledge Assistant</h4>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{courses[0]?.name || 'General'} • AI Synthesis</p>
                 </div>
               </div>
               <p className="text-2xl italic font-headline text-slate-600 leading-relaxed">
-                "{user.name}, your analysis of market volatility shows a sophisticated grasp of historical patterns. The way you integrated AI-generated data sets was particularly impressive."
+                "{user.name}, your performance in {myProfile.strong_concepts[0] || 'recent modules'} shows deep mastery. Let's tackle {myProfile.weak_concepts[0] || 'the next challenge'} next."
               </p>
             </div>
             <div className="bg-violet-600/5 p-12 flex flex-col items-center justify-center min-w-[240px]">

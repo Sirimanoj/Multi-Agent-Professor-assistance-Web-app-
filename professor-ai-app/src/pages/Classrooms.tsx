@@ -1,10 +1,24 @@
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Classrooms() {
-  const { courses, openModal } = useApp();
+  const { courses, openModal, joinCourse } = useApp();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [joinCode, setJoinCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setIsJoining(true);
+    await joinCourse(joinCode);
+    setJoinCode('');
+    setIsJoining(false);
+  };
 
   return (
     <Layout>
@@ -33,11 +47,34 @@ export default function Classrooms() {
             </div>
           ))}
           
-          <div onClick={() => openModal('course')} className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl flex flex-col items-center justify-center text-center hover:border-violet-400 hover:bg-violet-50/50 transition-colors cursor-pointer text-slate-500 hover:text-violet-600 min-h-[220px]">
-            <span className="material-symbols-outlined text-4xl mb-4">add_circle</span>
-            <h3 className="font-bold text-lg">Create New Course</h3>
-            <p className="text-xs mt-1">Initialize Syllabus Agent setup</p>
-          </div>
+          {user?.role === 'professor' ? (
+            <div onClick={() => openModal('course')} className="bg-white border-2 border-dashed border-slate-200 p-8 rounded-3xl flex flex-col items-center justify-center text-center hover:border-violet-400 hover:bg-violet-50/50 transition-colors cursor-pointer text-slate-500 hover:text-violet-600 min-h-[220px] group">
+              <span className="material-symbols-outlined text-4xl mb-4 group-hover:scale-110 transition-transform">add_circle</span>
+              <h3 className="font-bold text-lg">Create New Course</h3>
+              <p className="text-xs mt-1">Initialize Syllabus Agent setup</p>
+            </div>
+          ) : (
+            <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl flex flex-col items-center justify-center text-center min-h-[220px]">
+              <span className="material-symbols-outlined text-4xl mb-4 text-slate-400">group_add</span>
+              <h3 className="font-bold text-lg text-slate-600">Join a Classroom</h3>
+              <form onSubmit={handleJoin} className="mt-4 flex gap-2 w-full">
+                <input 
+                  type="text" 
+                  placeholder="Class Code" 
+                  className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-violet-100"
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value)}
+                />
+                <button 
+                  type="submit" 
+                  disabled={isJoining}
+                  className="bg-violet-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest disabled:opacity-50 active:scale-95 transition-transform"
+                >
+                  Join
+                </button>
+              </form>
+            </div>
+          )}
         </section>
       </main>
     </Layout>

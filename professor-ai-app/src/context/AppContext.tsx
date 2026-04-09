@@ -24,24 +24,26 @@ interface AppContextType {
   activeModal: 'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention';
   activeStudentId: string | null;
   activeQuizId: string | null;
+  activeCourseId: string | null;
 
   // Actions
   joinCourse: (code: string) => Promise<void>;
   createCourse: (name: string) => Promise<void>;
-  uploadMaterial: (file: File) => Promise<void>;
-  generateAssignment: (topic: string) => Promise<void>;
-  generateAdaptiveQuiz: (materialId: string, topic: string) => Promise<void>;
+  uploadMaterial: (file: File, courseId: string) => Promise<void>;
+  generateAssignment: (topic: string, courseId: string) => Promise<void>;
+  generateAdaptiveQuiz: (materialId: string, topic: string, courseId: string) => Promise<void>;
   submitQuizAnswers: (quizId: string, answers: Record<string, string>) => Promise<void>;
   markMaterialStudied: (materialId: string) => void;
   studiedMaterials: Set<string>;
-  addLinkMaterial: (url: string) => Promise<void>;
+  addLinkMaterial: (url: string, courseId: string) => Promise<void>;
   submitLectureSummary: (courseId: string, content: string) => Promise<void>;
-  submitAssignment: (assignmentId: string) => Promise<void>;
+  submitAssignment: (assignmentId: string, file?: File) => Promise<void>;
   sendMessage: (text: string, persona: string, currentMessages: any[]) => Promise<any>;
   markNotificationRead: (id: string) => Promise<void>;
   toggleTheme: () => void;
-  openModal: (modal: 'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention') => void;
+  openModal: (modal: 'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention', id?: string, courseId?: string) => void;
   openInterventionModal: (studentId: string) => void;
+  setCourseContext: (courseId: string | null) => void;
   postAnnouncement: (courseId: string, content: string, authorName: string) => Promise<void>;
   fetchData: () => Promise<void>;
   markClassAttended: (courseId: string) => Promise<void>;
@@ -72,11 +74,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeModal, setActiveModal] = useState<'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention'>('none');
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
 
-  const openModal = (modal: 'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention', id?: string) => {
+  const openModal = (modal: 'none' | 'course' | 'generate' | 'help' | 'quiz' | 'summary' | 'infinite_practice' | 'formats' | 'intervention', id?: string, courseId?: string) => {
     setActiveModal(modal);
-    if (modal === 'intervention') setActiveStudentId(id || null);
-    if (modal === 'quiz') setActiveQuizId(id || null);
+    if (modal === 'quiz' && id) setActiveQuizId(id);
+    if (modal === 'intervention' && id) setActiveStudentId(id);
+    if (courseId) setActiveCourseId(courseId);
+    else if (modal === 'none') setActiveCourseId(null);
+  };
+
+  const setCourseContext = (courseId: string | null) => {
+    setActiveCourseId(courseId);
   };
 
   const fetchData = async () => {
@@ -109,7 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Student
       const { data: enrollments } = await supabase.from('course_enrollments').select('course_id').eq('student_id', user.id);
       if (enrollments?.length) {
-        const courseIds = enrollments.map(e => e.course_id);
+        const courseIds = enrollments.map((e: any) => e.course_id);
         const { data: c } = await supabase.from('courses').select('*').in('id', courseIds);
         setCourses(c || []);
 
@@ -166,12 +175,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveModal('none');
   };
 
-  const uploadMaterial = async (file: File) => {
-    if (user?.role !== 'professor' || !courses.length) return;
+  const uploadMaterial = async (file: File, courseId: string) => {
+    if (user?.role !== 'professor') return;
     
     // 1. Upload to Storage
-    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const { data: storageData, error: storageError } = await supabase.storage
+    const fileName = `${courseId}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const { error: storageError } = await supabase.storage
       .from('materials')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -191,7 +200,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       title: file.name, 
       type: 'pdf', 
       url: publicUrl,
-      course_id: courses[0].id, 
+      course_id: courseId, 
       date_added: new Date().toISOString()
     }).select().single();
     
@@ -204,13 +213,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (data) setMaterials([data, ...materials]);
   };
 
-  const addLinkMaterial = async (url: string) => {
-    if (user?.role !== 'professor' || !courses.length) return;
+  const addLinkMaterial = async (url: string, courseId: string) => {
+    if (user?.role !== 'professor') return;
     const { data } = await supabase.from('materials').insert({
       title: url.split('/').pop()?.split('?')[0] || 'Web Resource', 
       type: 'link', 
       url: url,
-      course_id: courses[0].id, 
+      course_id: courseId, 
       date_added: new Date().toISOString()
     }).select().single();
     if (data) setMaterials([data, ...materials]);
@@ -220,12 +229,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStudiedMaterials(prev => new Set([...Array.from(prev), materialId]));
   };
 
-  const generateAssignment = async (topic: string) => {
+  const generateAssignment = async (topic: string, courseId: string) => {
     setIsGeneratingAssignment(true);
     const { data } = await supabase.from('assignments').insert({
        title: `AI Generated: ${topic}`,
        description: `Automatically compiled assignment rubric covering key aspects of ${topic}. Ready for distribution.`,
-       course_id: courses[0]?.id, status: 'pending', topic, type: 'must-do', urgency: 'medium'
+       course_id: courseId, status: 'pending', topic, type: 'must-do', urgency: 'medium'
     }).select().single();
     if (data) setAssignments([data, ...assignments]);
     setIsGeneratingAssignment(false);
@@ -243,10 +252,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const generateAdaptiveQuiz = async (materialId: string, topic: string) => {
+  const generateAdaptiveQuiz = async (materialId: string, topic: string, courseId: string) => {
     setIsGeneratingQuiz(true);
     const { data } = await supabase.functions.invoke('adaptive-quiz', {
-      body: { materialId, courseId: courses[0]?.id, topic }
+      body: { materialId, courseId, topic }
     });
     if (data) setQuizzes([data, ...quizzes]);
     setIsGeneratingQuiz(false);
@@ -293,10 +302,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveModal('none');
   };
 
-  const submitAssignment = async (assignmentId: string) => {
+  const submitAssignment = async (assignmentId: string, file?: File) => {
     setIsGrading(true);
+    
+    // In a real app, we would upload the assignment file to storage here
+    if (file) {
+      const fileName = `submissions/${assignmentId}/${user?.id}-${file.name}`;
+      await supabase.storage.from('materials').upload(fileName, file);
+    }
+
     await supabase.from('assignments').update({ status: 'submitted' }).eq('id', assignmentId);
     setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, status: 'submitted' } : a));
+    
+    // Simulate grading delay
     setTimeout(async () => {
       await supabase.from('assignments').update({ status: 'graded' }).eq('id', assignmentId);
       setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, status: 'graded' } : a));
@@ -315,7 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       // Use SDK standard invocation which automatically handles session JWT
       const { data, error } = await supabase.functions.invoke('chat-tutor', {
-        body: { message: text, history: currentMessages, persona }
+        body: { message: text, history: currentMessages, persona, courseId: activeCourseId }
       });
       
       if (error) throw error;
@@ -351,7 +369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // 2. Notify Enrolled Students
     const { data: enrollments } = await supabase.from('course_enrollments').select('student_id').eq('course_id', courseId);
     if (enrollments) {
-      const notifications = enrollments.map(e => ({
+      const notifications = enrollments.map((e: any) => ({
         user_id: e.student_id,
         title: 'Class Ended',
         message: 'Please submit your lecture summary for grading.',
@@ -366,8 +384,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       courses, materials, assignments, messages, notifications, announcements, usersList, profiles, summaries, quizzes,
-      isGeneratingAssignment, isLoading, isGrading, isAITyping, isGeneratingQuiz, theme, activeModal, activeStudentId, activeQuizId,
-      joinCourse, createCourse, uploadMaterial, addLinkMaterial, markMaterialStudied, studiedMaterials, generateAssignment, generateAdaptiveQuiz, submitQuizAnswers, submitLectureSummary, submitAssignment, sendMessage, markNotificationRead, toggleTheme, openModal, openInterventionModal, postAnnouncement, fetchData, markClassAttended
+      isGeneratingAssignment, isLoading, isGrading, isAITyping, isGeneratingQuiz, theme, activeModal, activeStudentId, activeQuizId, activeCourseId,
+      joinCourse, createCourse, uploadMaterial, addLinkMaterial, markMaterialStudied, studiedMaterials, generateAssignment, generateAdaptiveQuiz, submitQuizAnswers, submitLectureSummary, submitAssignment, sendMessage, markNotificationRead, toggleTheme, openModal, openInterventionModal, setCourseContext, postAnnouncement, fetchData, markClassAttended
     }}>
       {children}
     </AppContext.Provider>
