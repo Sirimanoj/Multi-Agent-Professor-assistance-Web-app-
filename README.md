@@ -1,41 +1,73 @@
-# Professor AI Multi-Agent Assistant
+# React + TypeScript + Vite
 
-Welcome to the **Professor AI Multi-Agent Assistant** repository! This advanced web application serves as a comprehensive, intelligent assistant for university-level courses, designed to reduce professor workload while simultaneously enhancing student learning.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🚀 Overview
+Currently, two official plugins are available:
 
-The system features a dual-dashboard interface with strict Role-Based Access Control (RBAC) ensuring a secure, customized experience for both **Professors** and **Students**. Under the hood, it is powered by a robust **multi-agent AI architecture** capable of handling specialized tasks securely and transparently.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🧠 Multi-Agent Architecture
+## React Compiler
 
-This project moves beyond a single, generic language model. It orchestrates a suite of specialized agents, including:
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-- **Orchestrator Agent**: Routes tasks, manages session context, and enforces permissions.
-- **Syllabus Agent**: Extracts structure from course documents, builds study roadmaps, and answers timeline-related queries.
-- **Grading Agent**: Evaluates submissions (both objective and subjective) transparently against professor-defined rubrics.
-- **Professor Knowledge / Chat Agent**: Answers student questions strictly grounded in approved course material, adopting the professor's unique teaching style and tone.
-- **Notification Agent**: Handles smart reminders for deadlines, grades, and announcements.
-- **Analytics Agent**: Analyzes class-wide performance, tracks improvement trends, and flags weak areas.
+## Expanding the ESLint configuration
 
-## ✨ Key Features
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-### For Professors:
-- **Classroom Management:** Create courses, manage enrollment, and broadcast announcements.
-- **Content Organization:** Upload syllabi, lecture slides, assignments, and exams.
-- **Automated Grading & Overrides:** Define rubrics, let AI evaluate submissions, and hold the power to review, edit, or override any grade.
-- **AI Tonal Control:** Configure the AI's response style to accurately reflect your pedagogical approach.
-- **Deep Analytics:** Monitor student performance, identify commonly missed concepts, and utilize audit logs.
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### For Students:
-- **Centralized Hub:** Access course materials, syllabi, and announcements in one place.
-- **Intelligent Chat Support:** Ask questions and receive real-time, grounded help that mimics the professor's teaching style.
-- **Transparent Grading:** View not just a score, but the exact rubric breakdown and explainable feedback.
-- **Progress Tracking:** Track personal improvement over time and receive helpful reminders.
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-## 🛠 Project Structure
-- `professor-ai-app/`: Main frontend and core application logic.
-- `video-showcase/`: Remotion-based project for generating system walkthroughs.
-- `professor_ai_multi_agent_build_spec (1).md`: The complete technical and architectural build specification.
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-## 📄 License
-All rights reserved.
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
