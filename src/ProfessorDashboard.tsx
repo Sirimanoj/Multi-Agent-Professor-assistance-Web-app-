@@ -10,6 +10,7 @@ export default function ProfessorDashboard() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLink, setIsUploadingLink] = useState(false);
+  const [targetCourseId, setTargetCourseId] = useState<string | null>(null);
 
   const getUserName = (id: string) => usersList.find(u => u.id === id)?.name || id;
   const strugglingStudents = profiles.filter(p => p.weak_concepts.length > 0);
@@ -25,21 +26,23 @@ export default function ProfessorDashboard() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && courses.length > 0) {
-      uploadMaterial(file, courses[0].id);
-    } else if (file) {
-      alert("Please create a classroom first.");
+    if (file && targetCourseId) {
+      uploadMaterial(file, targetCourseId);
     }
+    setTargetCourseId(null);
   };
 
-  const handleLinkUpload = async () => {
+  const triggerUpload = (courseId: string) => {
+    setTargetCourseId(courseId);
+    fileInputRef.current?.click();
+  };
+
+  const handleLinkUpload = async (courseId: string) => {
     const url = prompt("Enter the Google Slides or Resource URL:");
-    if (url && courses.length > 0) {
+    if (url) {
       setIsUploadingLink(true);
-      await addLinkMaterial(url, courses[0].id);
+      await addLinkMaterial(url, courseId);
       setIsUploadingLink(false);
-    } else if (url) {
-      alert("Please create a classroom first.");
     }
   };
 
@@ -72,36 +75,27 @@ export default function ProfessorDashboard() {
           </div>
         </section>
 
-        {/* Quick Actions */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="flex flex-col gap-4">
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:-translate-y-1 hover:shadow-xl transition-all relative overflow-hidden group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx" />
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                  <span className="material-symbols-outlined">upload_file</span>
-                </div>
+        {/* Quick Actions (Simplified) */}
+        <section>
+          <div 
+            onClick={() => openModal('course')} 
+            className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:-translate-y-1 hover:shadow-xl transition-all relative overflow-hidden group cursor-pointer flex items-center justify-between"
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-3xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all transform group-hover:rotate-6">
+                <span className="material-symbols-outlined text-3xl">add_circle</span>
               </div>
-              <h4 className="text-2xl font-headline font-bold mb-3">Upload Materials</h4>
-              <p className="text-slate-500 text-sm leading-relaxed mb-6">Syllabus Agent will automatically parse and distribute uploaded PDFs.</p>
-              <button className="text-indigo-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
-                Initialize Upload <span className="material-symbols-outlined text-sm">arrow_forward</span>
-              </button>
+              <div>
+                <h4 className="text-2xl font-headline font-bold mb-1">Create New Classroom</h4>
+                <p className="text-slate-500 text-sm">Initialize a new secure academic environment.</p>
+              </div>
             </div>
-
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:-translate-y-1 hover:shadow-lg transition-all flex items-center justify-between cursor-pointer group" onClick={handleLinkUpload}>
-               <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-colors">
-                    {isUploadingLink ? <span className="material-symbols-outlined animate-spin text-sm">sync</span> : <span className="material-symbols-outlined">link</span>}
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-slate-800">Add Resource Link</h5>
-                    <p className="text-xs text-slate-500">Google Slides, YouTube, Web Docs</p>
-                  </div>
-               </div>
-               <span className="material-symbols-outlined text-slate-300 group-hover:text-violet-600">add_circle</span>
-            </div>
+            <span className="material-symbols-outlined text-slate-300 group-hover:text-violet-600 transition-colors">arrow_forward_ios</span>
           </div>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx" />
 
           {/* Generate Assignment */}
           <div onClick={() => openModal('generate')} className="bg-gradient-to-br from-violet-600 to-indigo-600 text-white p-8 rounded-[2rem] shadow-[0_10px_20px_rgba(99,102,241,0.2)] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(99,102,241,0.3)] transition-all relative overflow-hidden group cursor-pointer">
@@ -193,16 +187,54 @@ export default function ProfessorDashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses?.map(course => (
-              <div key={course.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                <span className="text-[10px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 px-2 py-1 rounded-md">{course.code}</span>
-                <h3 className="font-bold text-lg mt-3 text-slate-800">{course.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{course.term}</p>
-                <button 
-                  onClick={() => markClassAttended(course.id)}
-                  className="mt-6 w-full py-2.5 rounded-xl border border-violet-100 text-violet-600 text-[10px] font-bold uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all active:scale-95 shadow-sm"
-                >
-                  Mark Class Conducted
-                </button>
+              <div key={course.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 px-2.5 py-1.5 rounded-xl border border-violet-100">{course.code}</span>
+                    <button onClick={() => markClassAttended(course.id)} className="w-8 h-8 rounded-full hover:bg-violet-50 text-slate-300 hover:text-violet-600 transition-colors flex items-center justify-center">
+                       <span className="material-symbols-outlined text-xl">verified</span>
+                    </button>
+                  </div>
+                  <h3 className="font-bold text-xl mt-4 text-slate-800 group-hover:text-violet-600 transition-colors">{course.name}</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">{course.term}</p>
+                  
+                  <div className="mt-8 space-y-3">
+                    <button 
+                      onClick={() => triggerUpload(course.id)}
+                      className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[10px] uppercase tracking-widest group/btn"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg opacity-50 group-hover/btn:opacity-100 transition-opacity">upload_file</span>
+                        Upload Material
+                      </div>
+                      <span className="material-symbols-outlined text-sm opacity-0 group-hover/btn:opacity-100 transition-all">add</span>
+                    </button>
+
+                    <button 
+                      onClick={() => handleLinkUpload(course.id)}
+                      disabled={isUploadingLink}
+                      className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[10px] uppercase tracking-widest group/btn"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg opacity-50 group-hover/btn:opacity-100 transition-opacity">
+                          {isUploadingLink ? 'sync' : 'link'}
+                        </span>
+                        {isUploadingLink ? 'Adding Link...' : 'Add Resource Link'}
+                      </div>
+                      <span className={`material-symbols-outlined text-sm opacity-0 group-hover/btn:opacity-100 transition-all ${isUploadingLink ? 'animate-spin' : ''}`}>
+                        {isUploadingLink ? 'sync' : 'add'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Active Node
+                  </div>
+                  <span>Agent Sync: Daily</span>
+                </div>
               </div>
             ))}
           </div>

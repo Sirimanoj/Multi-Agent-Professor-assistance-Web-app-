@@ -253,13 +253,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const generateAdaptiveQuiz = async (materialId: string, topic: string, courseId: string) => {
-    setIsGeneratingQuiz(true);
-    const { data } = await supabase.functions.invoke('adaptive-quiz', {
-      body: { materialId, courseId, topic }
-    });
-    if (data) setQuizzes([data, ...quizzes]);
-    setIsGeneratingQuiz(false);
-    setActiveModal('none');
+    try {
+      const { data, error } = await supabase.functions.invoke('adaptive-quiz', {
+        body: { materialId, courseId, topic }
+      });
+      
+      if (error) {
+        if (error.message?.includes('GEMINI_API_KEY')) {
+          alert("AI Error: GEMINI_API_KEY is not configured in your Supabase project. Please set it using 'supabase secrets set GEMINI_API_KEY=...'");
+        } else {
+          alert(`Quiz Generation failed: ${error.message}`);
+        }
+        throw error;
+      }
+
+      if (data) setQuizzes([data, ...quizzes]);
+    } catch (err: any) {
+      console.error("Quiz generation failed:", err);
+    } finally {
+      setIsGeneratingQuiz(false);
+      setActiveModal('none');
+    }
   };
 
   const submitQuizAnswers = async (quizId: string, answers: Record<string, string>) => {
@@ -348,7 +362,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       console.error("Chat Tutor failed:", err);
       setIsAITyping(false);
-      const errMsg = "I apologize, but my neural link is temporarily down. Please try again in a moment.";
+      let errMsg = "I apologize, but my neural link is temporarily down. Please try again in a moment.";
+      
+      if (err.message?.includes('GEMINI_API_KEY') || (err.status === 400)) {
+        errMsg = "Configuration Error: The GEMINI_API_KEY is missing or invalid in your Supabase Secrets. Please add it to your project.";
+      }
+
       if (isGlobal) setMessages(prev => [...prev, { id: `err-${Date.now()}`, user_id: user!.id, text: errMsg, sender: 'assistant', timestamp: new Date().toISOString(), created_at: new Date().toISOString() }]);
       return { role: 'ai', text: errMsg };
     }
