@@ -12,6 +12,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   
   const [showNotifs, setShowNotifs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -43,6 +44,11 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div onClick={() => setShowNotifs(!showNotifs)} className="relative group cursor-pointer p-2 hover:bg-slate-100/50 rounded-lg transition-all">
               <span className="material-symbols-outlined text-slate-500">notifications</span>
               {unreadCount > 0 && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>}
+            </div>
+
+            {/* AI Chat Toggle (Visible on < lg) */}
+            <div onClick={() => setShowChat(!showChat)} className="lg:hidden cursor-pointer p-2 hover:bg-slate-100/50 rounded-lg transition-all">
+              <span className="material-symbols-outlined text-slate-500">smart_toy</span>
             </div>
 
             {/* Notifications Dropdown */}
@@ -136,6 +142,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <span className="material-symbols-outlined">calendar_month</span>
               <span>Timeline</span>
             </NavLink>
+
           </nav>
           <button 
             onClick={() => openModal('course')}
@@ -159,14 +166,26 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Dynamic Main Content Injected Here */}
         {children}
 
-        {/* AI Chat Right Sidebar */}
-        <AIChat />
+        {/* AI Chat Sidebar */}
+        <AIChat isOpen={showChat} onClose={() => setShowChat(false)} />
+
+        {/* Floating AI Bubble */}
+        <button 
+          onClick={() => setShowChat(!showChat)}
+          className={`fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-[0px_10px_30px_rgba(93,63,211,0.4)] hover:scale-110 active:scale-95 transition-all z-[90] group ${showChat ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+        >
+          <span className="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-violet-500 border-2 border-white"></span>
+          </span>
+        </button>
       </div>
 
       <GlobalModals />
 
       {/* Mobile Nav */}
-      <nav className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/80 backdrop-blur-xl flex justify-around items-center rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)] border border-slate-100 z-50">
+      <nav className="lg:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/80 backdrop-blur-xl flex justify-around items-center rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)] border border-slate-100 z-50">
         <NavLink to="/dashboard" className={mobileNavClass}><span className="material-symbols-outlined">dashboard</span><span className="text-[9px] font-black uppercase">Home</span></NavLink>
         <NavLink to="/classrooms" className={mobileNavClass}><span className="material-symbols-outlined">school</span><span className="text-[9px] font-black uppercase">Class</span></NavLink>
         <NavLink to="/assignments" className={mobileNavClass}><span className="material-symbols-outlined">calendar_month</span><span className="text-[9px] font-black uppercase">Timeline</span></NavLink>

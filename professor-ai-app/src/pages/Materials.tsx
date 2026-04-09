@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
 export default function Materials() {
-  const { materials, uploadMaterial } = useApp();
+  const { materials, uploadMaterial, openModal } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -13,7 +13,7 @@ export default function Materials() {
 
   return (
     <Layout>
-      <main className="flex-1 lg:ml-[280px] mr-0 xl:mr-[400px] p-8 lg:p-12 space-y-12 animate-in fade-in duration-500">
+      <main className="flex-1 lg:ml-[280px] p-8 lg:p-12 space-y-12 animate-in fade-in duration-500">
         <div className="flex justify-between items-end border-b border-slate-100 pb-6">
           <div>
             <h1 className="text-4xl font-headline font-medium text-slate-900 tracking-tight">Resource Library</h1>
@@ -31,7 +31,8 @@ export default function Materials() {
               <tr className="bg-slate-50 text-xs uppercase tracking-widest text-slate-400 font-bold border-b border-slate-100">
                 <th className="p-6">Document Title</th>
                 <th className="p-6">Origin Course</th>
-                <th className="p-6 text-right">Date Ingested</th>
+                <th className="p-6">Date Ingested</th>
+                <th className="p-6 text-right">Adaptive Learning Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 text-sm font-medium text-slate-600">
@@ -42,9 +43,20 @@ export default function Materials() {
                     <span className="group-hover:text-violet-600 transition-colors font-semibold">{mat.title}</span>
                   </td>
                   <td className="p-6">
-                    <span className="bg-slate-100 px-3 py-1 rounded-lg text-xs">{mat.courseId.toUpperCase()}</span>
+                    <span className="bg-slate-100 px-3 py-1 rounded-lg text-xs">{mat.course_id.toUpperCase()}</span>
                   </td>
-                  <td className="p-6 text-right text-slate-400">{mat.dateAdded}</td>
+                  <td className="p-6 text-slate-400">{mat.date_added}</td>
+                  <td className="p-6 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); openModal('formats'); }} className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold hover:bg-orange-600 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+                      <span className="material-symbols-outlined text-[14px]">view_comfy_alt</span> Formats
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal('quiz'); }} className="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold hover:bg-indigo-600 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+                      <span className="material-symbols-outlined text-[14px]">psychology_alt</span> Quiz
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal('summary'); }} className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold hover:bg-emerald-600 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+                      <span className="material-symbols-outlined text-[14px]">rate_review</span> Summary
+                    </button>
+                  </td>
                 </tr>
               ))}
               {materials.length === 0 && (

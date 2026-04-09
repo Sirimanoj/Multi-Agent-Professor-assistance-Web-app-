@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signUp: (email: string, password: string, role: 'professor' | 'student') => Promise<{error: string | null}>;
+  signUp: (email: string, password: string, role: 'professor' | 'student', name: string) => Promise<{error: string | null}>;
   login: (email: string, password: string) => Promise<{error: string | null}>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -58,12 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: role,
         });
         
-        // Auto-redirect to the correct dashboard if not already there
-        if (role === 'professor') {
-          navigate('/professor/dashboard');
-        } else if (role === 'student') {
-          navigate('/student/dashboard');
-        }
       } else {
         setUser(null);
       }
@@ -72,13 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const signUp = async (email: string, password: string, role: 'professor' | 'student') => {
+  const signUp = async (email: string, password: string, role: 'professor' | 'student', name: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           role,
+          name
         }
       }
     });
@@ -102,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) console.error("Google login error:", error.message);
   };
+
+
 
   const logout = async () => {
     await supabase.auth.signOut();

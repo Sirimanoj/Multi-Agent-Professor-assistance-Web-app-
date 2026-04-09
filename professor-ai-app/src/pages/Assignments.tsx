@@ -8,7 +8,7 @@ export default function Assignments() {
 
   return (
     <Layout>
-      <main className="flex-1 lg:ml-[280px] mr-0 xl:mr-[400px] p-8 lg:p-12 space-y-10 animate-in fade-in duration-500">
+      <main className="flex-1 lg:ml-[280px] p-8 lg:p-12 space-y-10 animate-in fade-in duration-500">
         <div className="border-b border-slate-100 pb-6">
           <h1 className="text-4xl font-headline font-medium text-slate-900 tracking-tight">Timeline & Tasks</h1>
           <p className="text-slate-500 mt-2">Comprehensive view of all calendar operations.</p>
@@ -24,7 +24,7 @@ export default function Assignments() {
               <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between space-x-2 mb-2">
                   <span className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest rounded-lg ${assignment.status === 'graded' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>{assignment.status}</span>
-                  <time className="text-xs font-bold text-slate-400">{assignment.dueDate}</time>
+                  <time className="text-xs font-bold text-slate-400">{assignment.due_date}</time>
                 </div>
                 <h3 className="font-bold text-lg text-slate-800">{assignment.title}</h3>
                 <p className="text-sm text-slate-500 mt-2 leading-relaxed">{assignment.description}</p>

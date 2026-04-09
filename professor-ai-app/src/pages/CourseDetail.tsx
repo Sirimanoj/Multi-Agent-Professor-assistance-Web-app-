@@ -5,23 +5,23 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function CourseDetail() {
-  const { courseId } = useParams();
+  const { course_id } = useParams();
   const { user } = useAuth();
-  const { courses, assignments, announcements, usersList, postAnnouncement } = useApp();
+  const { courses, assignments, announcements, usersList, materials, studiedMaterials, markMaterialStudied, generateAdaptiveQuiz, quizzes, isGeneratingQuiz, openModal, postAnnouncement } = useApp();
   
   const [activeTab, setActiveTab] = useState<'stream' | 'classwork' | 'people' | 'grades'>('stream');
   const [announcementText, setAnnouncementText] = useState('');
 
-  const course = courses.find(c => c.id === courseId);
+  const course = courses.find(c => c.id === course_id);
 
   if (!course) {
     return <Navigate to="/classrooms" replace />;
   }
 
-  const courseAssignments = assignments.filter(a => a.courseId === courseId);
-  const courseAnnouncements = announcements.filter(a => a.courseId === courseId);
+  const courseAssignments = assignments.filter(a => a.course_id === course_id);
+  const courseAnnouncements = announcements.filter(a => a.course_id === course_id);
   const courseStudents = usersList.filter(u => u.role === 'student'); // Mock all students enrolled
-  const courseTeacher = usersList.find(u => u.name === course.instructor) || usersList.find(u => u.role === 'professor');
+  const courseTeacher = usersList.find(u => u.name === course.instructor_id) || usersList.find(u => u.role === 'professor');
 
   const handlePost = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +41,7 @@ export default function CourseDetail() {
 
   return (
     <Layout>
-      <main className="flex-1 lg:ml-[280px] mr-0 xl:mr-[400px] animate-in fade-in duration-500">
+      <main className="flex-1 lg:ml-[280px] animate-in fade-in duration-500">
         
         {/* Course Hero Banner */}
         <section className="bg-gradient-to-br from-violet-600 to-indigo-700 text-white p-8 lg:p-12 relative overflow-hidden min-h-[240px] flex flex-col justify-end">
@@ -50,7 +50,7 @@ export default function CourseDetail() {
           
           <div className="relative z-10">
             <h1 className="text-4xl lg:text-5xl font-headline font-bold drop-shadow-md">{course.name}</h1>
-            <p className="text-violet-100 font-medium mt-2 drop-shadow-sm">{course.term} • {course.instructor}</p>
+            <p className="text-violet-100 font-medium mt-2 drop-shadow-sm">{course.term} • {course.instructor_id}</p>
             <div className="mt-4 font-mono bg-white/20 backdrop-blur-md px-3 py-1 rounded inline-block text-xs font-bold tracking-widest shadow-lg">
               Class Code: {course.code}
             </div>
@@ -81,7 +81,7 @@ export default function CourseDetail() {
                   </h3>
                   {courseAssignments.filter(a => a.status === 'pending').slice(0,3).map(a => (
                     <div key={a.id} className="mb-3 last:mb-0">
-                      <p className="text-xs text-slate-500 font-bold mb-1">{a.dueDate}</p>
+                      <p className="text-xs text-slate-500 font-bold mb-1">{a.due_date}</p>
                       <p className="text-sm text-slate-700 font-medium truncate">{a.title}</p>
                     </div>
                   ))}
@@ -117,10 +117,10 @@ export default function CourseDetail() {
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-sm">
-                          {an.authorName[0]}
+                          {an.author_name[0]}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-800 text-sm">{an.authorName}</p>
+                          <p className="font-bold text-slate-800 text-sm">{an.author_name}</p>
                           <p className="text-xs font-medium text-slate-400">{an.timestamp}</p>
                         </div>
                       </div>
@@ -140,35 +140,137 @@ export default function CourseDetail() {
           {/* CLASSWORK VIEW */}
           {activeTab === 'classwork' && (
             <div className="space-y-12">
+              {/* Materials Section */}
+              <div className="mb-10">
+                <h2 className="text-2xl font-headline font-bold text-indigo-600 border-b-2 border-slate-100 pb-3 mb-6 flex justify-between items-end">
+                  Course Materials
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {materials.filter(m => m.course_id === course_id).map(material => {
+                     const isStudied = studiedMaterials.has(material.id);
+                     const quiz = quizzes.find(q => q.material_id === material.id);
+                     
+                     return (
+                       <div key={material.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                                <span className="material-symbols-outlined">{material.type === 'link' ? 'link' : 'description'}</span>
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-800">{material.title}</h4>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{material.type} • {material.date_added.split('T')[0]}</p>
+                              </div>
+                            </div>
+                            {material.url && (
+                              <a href={material.url} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-violet-600 transition-colors">
+                                <span className="material-symbols-outlined">open_in_new</span>
+                              </a>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mt-2">
+                             {!isStudied ? (
+                               <button 
+                                 onClick={() => markMaterialStudied(material.id)}
+                                 className="flex-1 bg-violet-100 text-violet-700 font-bold text-xs py-2 rounded-lg hover:bg-violet-600 hover:text-white transition-all uppercase tracking-widest"
+                               >
+                                 Mark as Studied
+                               </button>
+                             ) : !quiz ? (
+                               <button 
+                                 onClick={() => generateAdaptiveQuiz(material.id, material.title)}
+                                 disabled={isGeneratingQuiz}
+                                 className="flex-1 bg-indigo-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-indigo-700 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                               >
+                                 {isGeneratingQuiz ? <span className="material-symbols-outlined animate-spin text-sm">sync</span> : <span className="material-symbols-outlined text-sm">auto_awesome</span>}
+                                 Request AI Quiz
+                               </button>
+                             ) : !quiz.completed ? (
+                               <button 
+                                 onClick={() => openModal('quiz', quiz.id)}
+                                 className="flex-1 bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-emerald-700 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                               >
+                                 <span className="material-symbols-outlined text-sm">play_circle</span>
+                                 Start Assessment
+                               </button>
+                             ) : (
+                               <div className="flex-1 bg-slate-50 text-slate-500 font-bold text-xs py-2 px-4 rounded-lg flex items-center justify-between">
+                                 <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm text-green-500">check_circle</span> Grade: {quiz.score}%</span>
+                                 <button onClick={() => openModal('quiz', quiz.id)} className="text-indigo-600 hover:underline">Review</button>
+                               </div>
+                             )}
+                          </div>
+                       </div>
+                     );
+                  })}
+                  {materials.filter(m => m.course_id === course_id).length === 0 && (
+                    <p className="text-slate-400 text-sm italic col-span-2">No materials posted yet.</p>
+                  )}
+                </div>
+              </div>
+
               {['Week 1: Fundamentals', 'Midterms', 'Uncategorized'].map(topicGroup => {
                 const topicAssignments = courseAssignments.filter(a => (a.topic || 'Uncategorized') === topicGroup);
                 if (topicAssignments.length === 0) return null;
 
+                const mustDo = topicAssignments.filter(a => a.type === 'must-do');
+                const mayDo = topicAssignments.filter(a => a.type === 'may-do');
+
                 return (
-                  <div key={topicGroup}>
+                  <div key={topicGroup} className="mb-10">
                     <h2 className="text-2xl font-headline font-bold text-violet-600 border-b-2 border-slate-100 pb-3 mb-6 flex justify-between items-end">
                       {topicGroup}
                     </h2>
-                    <div className="space-y-4">
-                      {topicAssignments.map(assignment => (
-                        <div key={assignment.id} className="bg-white group p-6 rounded-2xl shadow-sm hover:shadow-lg border border-slate-100 hover:border-violet-200 transition-all flex justify-between items-center cursor-pointer">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                              <span className="material-symbols-outlined text-xl">assignment</span>
+                    
+                    {mustDo.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500"></span> Core Requirements (Must-Do)</h3>
+                        <div className="space-y-3">
+                          {mustDo.map(assignment => (
+                            <div key={assignment.id} className="bg-white group p-5 rounded-2xl shadow-sm hover:shadow-lg border border-slate-100 hover:border-violet-200 transition-all flex justify-between items-center cursor-pointer">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                  <span className="material-symbols-outlined text-lg">assignment</span>
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-slate-800 group-hover:text-violet-600 transition-colors">{assignment.title}</h4>
+                                  <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                                    <span className="material-symbols-outlined text-[12px]">schedule</span> Due {assignment.due_date}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${getUrgencyColor(assignment.urgency)}`}>
+                                {assignment.urgency}
+                              </span>
                             </div>
-                            <div>
-                              <h4 className="font-bold text-lg text-slate-800 group-hover:text-violet-600 transition-colors">{assignment.title}</h4>
-                              <p className="text-xs text-slate-400 font-medium flex items-center gap-2 mt-1">
-                                <span className="material-symbols-outlined text-[12px]">schedule</span> Due {assignment.dueDate}
-                              </p>
-                            </div>
-                          </div>
-                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${getUrgencyColor(assignment.urgency)}`}>
-                            {assignment.urgency}
-                          </span>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
+
+                    {mayDo.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2 mt-6"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Exploration (May-Do)</h3>
+                        <div className="space-y-3">
+                          {mayDo.map(assignment => (
+                            <div key={assignment.id} className="bg-slate-50 group p-5 rounded-2xl shadow-none hover:bg-white hover:shadow-md border border-transparent hover:border-emerald-200 transition-all flex justify-between items-center cursor-pointer border-dashed">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                  <span className="material-symbols-outlined text-lg">explore</span>
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">{assignment.title}</h4>
+                                  <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                                    <span className="material-symbols-outlined text-[12px]">star</span> Extra Credit & Deep Dive
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -232,12 +334,20 @@ export default function CourseDetail() {
                       </td>
                       {courseAssignments.map((a, idx) => (
                         <td key={a.id} className="p-5 text-center text-sm">
-                          {/* Pseudo-random grades based on ID and assignment index */}
-                          {a.status === 'graded' || idx === 1 ? (
-                            <span className="font-bold text-slate-700">{(85 + (idx*5) + parseInt(student.id.replace('u',''))).toString()}/100</span>
+                          {a.status === 'graded' ? (
+                            <span className="font-bold text-slate-700">88/100</span>
                           ) : (
-                            <span className="text-slate-300 italic text-xs">Missing</span>
+                            <span className="text-slate-300 italic text-xs">Pending</span>
                           )}
+                        </td>
+                      ))}
+                      {quizzes.filter(q => q.course_id === course_id).map(q => (
+                        <td key={q.id} className="p-5 text-center text-sm">
+                           {q.completed ? (
+                             <span className="font-bold text-indigo-600">{q.score}/100</span>
+                           ) : (
+                             <span className="text-amber-500 text-xs">In Progress</span>
+                           )}
                         </td>
                       ))}
                     </tr>

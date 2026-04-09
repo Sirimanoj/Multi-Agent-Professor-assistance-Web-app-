@@ -5,6 +5,7 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<'professor' | 'student' | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function Login() {
     
     let error = null;
     if (isSignUp) {
-      const res = await signUp(email, password, selectedRole);
+      const res = await signUp(email, password, selectedRole, name);
       error = res.error;
     } else {
       const res = await login(email, password);
@@ -28,6 +29,9 @@ export default function Login() {
     setIsLoading(false);
     if (error) {
       setErrorMsg(error);
+    } else {
+      // Redirect occurs automatically via Navigate component in App.tsx or we can force it here
+      window.location.href = '/dashboard';
     }
   };
 
@@ -59,7 +63,10 @@ export default function Login() {
             </div>
 
             <button 
-              onClick={() => setSelectedRole('professor')}
+              onClick={() => {
+                setSelectedRole('professor');
+                setIsSignUp(true);
+              }}
               className="w-full p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-5 group hover:bg-white"
             >
                <div className="w-14 h-14 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-colors shadow-inner">
@@ -73,7 +80,10 @@ export default function Login() {
             </button>
 
             <button 
-              onClick={() => setSelectedRole('student')}
+              onClick={() => {
+                setSelectedRole('student');
+                setIsSignUp(true);
+              }}
               className="w-full p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-5 group hover:bg-white"
             >
                <div className="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-inner">
@@ -103,10 +113,10 @@ export default function Login() {
             <div className="text-center mb-8 space-y-2">
               <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">
                 {selectedRole === 'professor' ? 'Professor ' : 'Student '}
-                {isSignUp ? 'Sign Up' : 'Login'}
+                {isSignUp ? 'Registration' : 'Login'}
               </h1>
               <p className="text-slate-500 text-sm">
-                {isSignUp ? 'Create your account credentials.' : 'Enter your credentials to continue.'}
+                {isSignUp ? 'New account creation for first-time users.' : 'Welcome back! Enter your login details.'}
               </p>
             </div>
 
@@ -133,6 +143,23 @@ export default function Login() {
                   />
                 </div>
               </div>
+
+              {isSignUp && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-2 block">Full Name</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">person</span>
+                    <input 
+                      type="text" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="w-full bg-slate-50/50 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-4 focus:ring-violet-500/10 focus:bg-white transition-all placeholder:text-slate-300 font-medium text-slate-700 outline-none shadow-inner"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-2">
