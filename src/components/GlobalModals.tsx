@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import QuizTaker from './QuizTaker';
 
 export default function GlobalModals() {
-  const { sendMessage, activeModal, activeQuizId, activeCourseId, openModal, joinCourse, createCourse, generateAssignment, generateAdaptiveQuiz, submitLectureSummary, isGeneratingQuiz, isGrading, activeStudentId, profiles, usersList } = useApp();
+  const { sendMessage, activeModal, activeQuizId, activeCourseId, openModal, joinCourse, createCourse, generateAssignment, generateAdaptiveQuiz, submitLectureSummary, isGeneratingQuiz, isGrading, activeStudentId, profiles, usersList, isGeneratingRoadmap } = useApp();
   const { user } = useAuth();
   const [inputValue, setInputValue] = useState('');
   const [summaryText, setSummaryText] = useState('');
@@ -32,8 +32,8 @@ export default function GlobalModals() {
     }
   };
 
-  const interventionStudent = activeStudentId ? profiles.find(p => p.user_id === activeStudentId) : null;
-  const interventionStudentName = usersList.find(u => u.id === activeStudentId)?.name || 'Student';
+  const interventionStudent = activeStudentId ? profiles.find(p => p.user_id === activeStudentId) : (user?.role === 'student' ? profiles.find(p => p.user_id === user.id) : null);
+  const interventionStudentName = usersList.find(u => u.id === activeStudentId)?.name || user?.name || 'Student';
   
   if (activeModal === 'none') {
     if (hasConfirmedStudy) setHasConfirmedStudy(false); // Reset for next time
@@ -48,7 +48,6 @@ export default function GlobalModals() {
       if (user?.role === 'professor') createCourse(inputValue);
       else joinCourse(inputValue);
     } else if (activeModal === 'generate') {
-      // If no active course, we choose the first one or alert
       const targetCourseId = activeCourseId || (user?.role === 'professor' ? useApp().courses[0]?.id : null);
       if (targetCourseId) generateAssignment(inputValue, targetCourseId);
       else alert("Please select a classroom first.");
@@ -57,6 +56,12 @@ export default function GlobalModals() {
     setInputValue('');
     openModal('none');
   };
+
+  if (activeModal === 'quiz' && activeQuizId) {
+    return <QuizTaker quizId={activeQuizId} />;
+  }
+
+  const isGlobalLoading = isGeneratingQuiz || isGeneratingRoadmap;
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
@@ -71,7 +76,7 @@ export default function GlobalModals() {
               <span className="material-symbols-outlined text-2xl">school</span>
             </div>
             <div>
-              <h2 className="text-2xl font-headline font-bold text-slate-900">{user?.role === 'professor' ? 'Create Classroom' : 'Join Classroom'}</h2>
+              <h2 className="text-2xl font-headline font-bold text-slate-900">{user?.role === 'professor' ? 'Initialize Classroom' : 'Join Existing Classroom'}</h2>
               <p className="text-sm text-slate-500 mt-2">
                 {user?.role === 'professor' 
                   ? 'Initialize a new environment for the Syllabus Agent to track.' 
@@ -181,8 +186,8 @@ export default function GlobalModals() {
                <h2 className="text-2xl font-headline font-bold text-slate-900">Adaptive AI Quiz</h2>
                <p className="text-sm text-slate-500 mt-2">
                  {hasConfirmedStudy 
-                   ? 'The AI Tutor wants to test your understanding before progressing. This short quiz adapts its questions dynamically based on your learning speed.'
-                   : 'Have you studied the latest material uploaded by your Professor?'
+                   ? "The AI Tutor wants to test your understanding before progressing. This short quiz adapts its questions dynamically based on your learning speed."
+                   : "Have you studied the latest material uploaded by your Professor?"
                  }
                </p>
              </div>
@@ -192,23 +197,89 @@ export default function GlobalModals() {
                  <button onClick={() => setHasConfirmedStudy(true)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg active:scale-95 transition-all text-sm uppercase tracking-widest">
                    Yes, I have studied
                  </button>
-                 <button onClick={() => openModal('none')} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 px-6 rounded-xl active:scale-95 transition-all text-sm uppercase tracking-widest">
+                 <button onClick={() => openModal('roadmap')} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 px-6 rounded-xl active:scale-95 transition-all text-sm uppercase tracking-widest">
                    Not yet
                  </button>
                </div>
              ) : (
-               <button onClick={() => {
-                 const targetCourseId = activeCourseId || useApp().courses[0]?.id;
-                 if (targetCourseId) generateAdaptiveQuiz('m1', 'Core Concept', targetCourseId);
-               }} disabled={isGeneratingQuiz} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all text-sm uppercase tracking-widest flex justify-center items-center gap-2 mx-auto">
-                 {isGeneratingQuiz ? <><span className="material-symbols-outlined animate-spin text-sm">sync</span> Generating Quiz...</> : 'Start Assessment'}
-               </button>
+                <button 
+                  onClick={() => {
+                   const targetCourseId = activeCourseId || useApp().courses[0]?.id;
+                   const targetCourseName = useApp().courses.find(c => c.id === targetCourseId)?.name || 'General Knowledge';
+                   if (targetCourseId) generateAdaptiveQuiz('', targetCourseName, targetCourseId);
+                 }} 
+                 disabled={isGeneratingQuiz} 
+                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all text-sm uppercase tracking-widest flex justify-center items-center gap-2 mx-auto disabled:opacity-50"
+                >
+                   {isGeneratingQuiz ? (
+                     <><span className="material-symbols-outlined animate-spin text-sm">sync</span> Drafting Analysis... (15 Qs)</>
+                   ) : (
+                     <><span className="material-symbols-outlined text-sm">bolt</span> Start Assessment</>
+                   )}
+                 </button>
              )}
           </div>
         )}
+
+        {activeModal === 'roadmap' && (
+          <div className="p-10 space-y-8 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl border border-indigo-500/30 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.5)]">
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner group">
+                 <span className="material-symbols-outlined text-3xl text-indigo-300 group-hover:scale-110 transition-transform">model_training</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-3xl font-headline font-bold text-white tracking-tight">AI Study Roadmap</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Customized Learning Path Generation</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-indigo-200 leading-relaxed max-w-sm">
+                Based on your current profile, I’ve broken down the core concepts into manageable, bite-sized steps. Follow this outline, and you'll easily score above 70% on your next attempt.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
+               
+               {isGeneratingRoadmap ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <span className="material-symbols-outlined animate-spin text-4xl text-indigo-400">sync</span>
+                    <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">AI Coach is Drafting your Path...</p>
+                  </div>
+               ) : (
+                 <>
+                   {interventionStudent?.learning_roadmap ? (
+                     <div className="space-y-6 max-h-[40vh] overflow-y-auto pr-2 scrollbar-hide">
+                       {(interventionStudent.learning_roadmap as any[]).map((step, idx) => (
+                         <div key={idx} className="relative z-10 flex gap-4 items-start group cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-xl transition-colors">
+                           <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-1 shadow-md group-hover:bg-indigo-400 transition-colors">{step.week || idx+1}</div>
+                           <div>
+                             <h4 className="font-bold text-indigo-50">{step.focus}</h4>
+                             <p className="text-xs text-indigo-200/80 mt-1 leading-relaxed"><span className="text-indigo-400 font-bold uppercase text-[9px]">Strategy:</span> {step.strategy}</p>
+                             <div className="mt-2 text-[10px] bg-indigo-500/20 text-indigo-300 py-1 px-2 rounded-md inline-block border border-indigo-500/30">Target Goal: {step.goal}</div>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <p className="text-xs text-indigo-300 italic text-center py-4">No roadmap generated yet. Complete a quiz attempt first.</p>
+                   )}
+                 </>
+               )}
+            </div>
+
+            <button onClick={() => openModal('none')} className="w-full bg-white hover:bg-indigo-50 text-indigo-900 font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2">
+               <span className="material-symbols-outlined text-sm">rocket_launch</span> Begin Path
+            </button>
+          </div>
+        )}
+
         {activeModal === 'infinite_practice' && (
           <div className="flex flex-col h-[600px] w-full bg-slate-50 relative">
-            {/* Header */}
             <div className="p-6 bg-white border-b border-slate-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
@@ -216,7 +287,7 @@ export default function GlobalModals() {
                 </div>
                 <div>
                   <h2 className="text-xl font-headline font-bold text-slate-900">Infinite Practice</h2>
-                  <p className="text-xs text-indigo-500 font-bold uppercase tracking-widest mt-0.5">Opportunity Cost • Foundational</p>
+                  <p className="text-xs text-indigo-500 font-bold uppercase tracking-widest mt-0.5">{useApp().courses.find(c => c.id === activeCourseId)?.name || 'General Concepts'} • Foundational</p>
                 </div>
               </div>
               <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
@@ -226,7 +297,6 @@ export default function GlobalModals() {
               </div>
             </div>
 
-            {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {practiceMessages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -246,7 +316,6 @@ export default function GlobalModals() {
               )}
             </div>
 
-            {/* Input Area */}
             <form onSubmit={async (e) => {
                 e.preventDefault();
                 if (!practiceInput.trim()) return;
@@ -280,7 +349,7 @@ export default function GlobalModals() {
             <div className="p-6 bg-white border-b border-slate-100 flex justify-between items-center z-10 shrink-0">
                <div>
                   <h2 className="text-xl font-headline font-bold text-slate-900">Differentiated Material</h2>
-                  <p className="text-xs text-orange-500 font-bold uppercase tracking-widest mt-0.5">Syllabus - Macroeconomics.pdf</p>
+                  <p className="text-xs text-orange-500 font-bold uppercase tracking-widest mt-0.5">{useApp().materials.find(m => m.course_id === activeCourseId)?.title || 'Course Material'}</p>
                </div>
             </div>
             
@@ -326,10 +395,6 @@ export default function GlobalModals() {
                )}
             </div>
           </div>
-        )}
-
-        {activeModal === 'quiz' && activeQuizId && (
-           <QuizTaker quizId={activeQuizId} />
         )}
 
         {activeModal === 'intervention' && interventionStudent && (

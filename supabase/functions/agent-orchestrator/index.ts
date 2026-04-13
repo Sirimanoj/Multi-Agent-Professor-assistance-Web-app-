@@ -28,6 +28,13 @@ Deno.serve(async (req) => {
 
   try {
     const { intent, content, context, userId, courseId }: AgentRequest = await req.json();
+    const authHeader = req.headers.get('Authorization');
+    
+    if (!authHeader && intent !== 'content') {
+       // content extraction might be called without user JWT in some flows, but usually it should have it
+       console.warn(`[agent-orchestrator] Missing Authorization for intent: ${intent}`);
+    }
+
     console.log(`Received agent request: ${intent}`);
 
     let response;
@@ -118,13 +125,33 @@ async function handleEvaluation(model: any, submission: string, rubric: any) {
 }
 
 async function handleContentParsing(model: any, text: string, context: any) {
-  const prompt = `Act as a Content Agent. Parse the following raw course material and extract key topics, modules, and learning outcomes.
-  Material: ${text}
-  
-  Output in JSON: { topics: [], modules: [], summaries: {} }`;
+  let promptText = `Act as a Content Agent. Parse the following raw course material and extract key topics, modules, and learning outcomes.\nMaterial: ${text}`;
+  let parts: any[] = [{ text: promptText }];
 
-  const result = await model.generateContent(prompt);
-  return JSON.parse(result.response.text().replace(/```json|```/g, ''));
+  if (context?.url && context.url.toLowerCase().endsWith('.pdf')) {
+    try {
+      const response = await fetch(context.url);
+      const arrayBuffer = await response.arrayBuffer();
+      const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      
+      parts = [
+        {
+          inlineData: {
+            data: base64Content,
+            mimeType: "application/pdf"
+          }
+        },
+        {
+          text: "Extract the full text content from this document. Provide a clean, structured transcription of all lecture notes, including key topics and technical definitions. Format as a single long string of text."
+        }
+      ];
+    } catch (e) {
+      console.error("Failed to fetch PDF:", e);
+    }
+  }
+  
+  const result = await model.generateContent(parts);
+  return result.response.text();
 }
 
 async function handleTracking(content: string, context: any, userId?: string, courseId?: string) {

@@ -5,9 +5,14 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function CourseDetail() {
-  const { course_id } = useParams();
+  const { courseId } = useParams();
   const { user } = useAuth();
-  const { courses, assignments, announcements, usersList, materials, studiedMaterials, markMaterialStudied, generateAdaptiveQuiz, quizzes, isGeneratingQuiz, openModal, setCourseContext, postAnnouncement } = useApp();
+  const { 
+    courses, assignments, announcements, usersList, materials, studiedMaterials, 
+    markMaterialStudied, generateAdaptiveQuiz, quizzes, isGeneratingQuiz, 
+    openModal, setCourseContext, postAnnouncement,
+    uploadMaterial, addLinkMaterial, submitAssignment, profiles, setActiveStudentId 
+  } = useApp();
   
   const [activeTab, setActiveTab] = useState<'stream' | 'classwork' | 'people' | 'grades'>('stream');
   const [announcementText, setAnnouncementText] = useState('');
@@ -17,21 +22,21 @@ export default function CourseDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (course_id) {
-      setCourseContext(course_id);
+    if (courseId) {
+      setCourseContext(courseId);
     }
     return () => setCourseContext(null);
-  }, [course_id]);
+  }, [courseId]);
 
-  const course = courses.find(c => c.id === course_id);
+  const course = courses.find(c => c.id === courseId);
 
   if (!course) {
     return <Navigate to="/classrooms" replace />;
   }
 
-  const courseAssignments = assignments.filter(a => a.course_id === course_id);
-  const courseAnnouncements = announcements.filter(a => a.course_id === course_id);
-  const courseStudents = usersList.filter(u => u.role === 'student'); // Mock all students enrolled
+  const courseAssignments = assignments.filter(a => a.course_id === courseId);
+  const courseAnnouncements = announcements.filter(a => a.course_id === courseId);
+  const courseStudents = usersList.filter(u => u.role === 'student'); 
   const courseTeacher = usersList.find(u => u.name === course.instructor_id) || usersList.find(u => u.role === 'professor');
 
   const handlePost = (e: React.FormEvent) => {
@@ -43,14 +48,14 @@ export default function CourseDetail() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && course_id) {
-      useApp().uploadMaterial(file, course_id);
+    if (file && courseId) {
+      uploadMaterial(file, courseId);
     }
   };
 
   const handleAddLink = () => {
-    if (linkUrl.trim() && course_id) {
-      useApp().addLinkMaterial(linkUrl, course_id);
+    if (linkUrl.trim() && courseId) {
+      addLinkMaterial(linkUrl, courseId);
       setLinkUrl('');
       setIsAddingLink(false);
     }
@@ -166,6 +171,68 @@ export default function CourseDetail() {
           {/* CLASSWORK VIEW */}
           {activeTab === 'classwork' && (
             <div className="space-y-12">
+              
+              {/* Professor Action Hub */}
+              {user?.role === 'professor' && (
+                <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 lg:p-10 shadow-2xl relative overflow-hidden group mb-12">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/20 rounded-full blur-3xl -translate-y-32 translate-x-32"></div>
+                   <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-violet-600 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-2xl">electric_bolt</span>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-headline font-bold">Professor Action Hub</h2>
+                          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Deploy Knowledge Assets & Assessments</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/10 hover:border-violet-500/50 transition-all group/btn"
+                        >
+                          <span className="material-symbols-outlined text-3xl text-violet-400 mb-3 group-hover/btn:scale-110 transition-transform">upload_file</span>
+                          <span className="font-bold text-xs uppercase tracking-widest">Upload Doc</span>
+                          <p className="text-[10px] text-slate-500 mt-2">PDF Analysis Engine</p>
+                        </button>
+
+                        <button 
+                          onClick={() => setIsAddingLink(true)}
+                          className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/10 hover:border-indigo-500/50 transition-all group/btn"
+                        >
+                          <span className="material-symbols-outlined text-3xl text-indigo-400 mb-3 group-hover/btn:scale-110 transition-transform">add_link</span>
+                          <span className="font-bold text-xs uppercase tracking-widest">Assign Topic</span>
+                          <p className="text-[10px] text-slate-500 mt-2">Study Goals & Resources</p>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            const courseMaterials = materials.filter(m => m.course_id === courseId);
+                            const latestMaterial = courseMaterials[0];
+                            if (latestMaterial) generateAdaptiveQuiz(latestMaterial.id, latestMaterial.title, courseId!);
+                            else alert("Please upload a PDF or add a link to this classroom first so I can generate an adaptive quiz from it.");
+                          }}
+                          className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/10 hover:border-emerald-500/50 transition-all group/btn"
+                        >
+                          <span className="material-symbols-outlined text-3xl text-emerald-400 mb-3 group-hover/btn:scale-110 transition-transform">quiz</span>
+                          <span className="font-bold text-xs uppercase tracking-widest">Assign Quiz</span>
+                          <p className="text-[10px] text-slate-500 mt-2">Adaptive AI Evaluation</p>
+                        </button>
+
+                        <button 
+                          onClick={() => openModal('generate')}
+                          className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/10 hover:border-orange-500/50 transition-all group/btn"
+                        >
+                          <span className="material-symbols-outlined text-3xl text-orange-400 mb-3 group-hover/btn:scale-110 transition-transform">assignment_turned_in</span>
+                          <span className="font-bold text-xs uppercase tracking-widest">Assign Assignment</span>
+                          <p className="text-[10px] text-slate-500 mt-2">Generative Task Creator</p>
+                        </button>
+                      </div>
+                   </div>
+                </div>
+              )}
+
               {/* Materials Section */}
               <div className="mb-10">
                 <h2 className="text-2xl font-headline font-bold text-indigo-600 border-b-2 border-slate-100 pb-3 mb-6 flex justify-between items-end">
@@ -208,7 +275,7 @@ export default function CourseDetail() {
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {materials.filter(m => m.course_id === course_id).map(material => {
+                  {materials.filter(m => m.course_id === courseId).map(material => {
                      const isStudied = studiedMaterials.has(material.id);
                      const quiz = quizzes.find(q => q.material_id === material.id);
                      
@@ -232,23 +299,23 @@ export default function CourseDetail() {
                           </div>
                           
                           <div className="flex items-center gap-2 mt-2">
-                             {!isStudied ? (
+                             {!isStudied && user?.role === 'student' ? (
                                <button 
                                  onClick={() => markMaterialStudied(material.id)}
                                  className="flex-1 bg-violet-100 text-violet-700 font-bold text-xs py-2 rounded-lg hover:bg-violet-600 hover:text-white transition-all uppercase tracking-widest"
                                >
                                  Mark as Studied
                                </button>
-                             ) : !quiz ? (
+                             ) : (!quiz && user?.role === 'student') ? (
                                <button 
-                                 onClick={() => generateAdaptiveQuiz(material.id, material.title, course_id!)}
+                                 onClick={() => generateAdaptiveQuiz(material.id, material.title, courseId!)}
                                  disabled={isGeneratingQuiz}
                                  className="flex-1 bg-indigo-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-indigo-700 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                                >
                                  {isGeneratingQuiz ? <span className="material-symbols-outlined animate-spin text-sm">sync</span> : <span className="material-symbols-outlined text-sm">auto_awesome</span>}
                                  Request AI Quiz
                                </button>
-                             ) : !quiz.completed ? (
+                             ) : (quiz && !quiz.completed && user?.role === 'student') ? (
                                <button 
                                  onClick={() => openModal('quiz', quiz.id)}
                                  className="flex-1 bg-emerald-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-emerald-700 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
@@ -258,15 +325,15 @@ export default function CourseDetail() {
                                </button>
                              ) : (
                                <div className="flex-1 bg-slate-50 text-slate-500 font-bold text-xs py-2 px-4 rounded-lg flex items-center justify-between">
-                                 <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm text-green-500">check_circle</span> Grade: {quiz.score}%</span>
-                                 <button onClick={() => openModal('quiz', quiz.id)} className="text-indigo-600 hover:underline">Review</button>
+                                 <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm text-green-500">check_circle</span> Grade: {quiz?.score}%</span>
+                                  <button onClick={() => quiz && openModal('quiz', quiz.id)} className="text-indigo-600 hover:underline">Review</button>
                                </div>
                              )}
                           </div>
                        </div>
                      );
                   })}
-                  {materials.filter(m => m.course_id === course_id).length === 0 && (
+                  {materials.filter(m => m.course_id === courseId).length === 0 && (
                     <p className="text-slate-400 text-sm italic col-span-2">No materials posted yet.</p>
                   )}
                 </div>
@@ -320,7 +387,7 @@ export default function CourseDetail() {
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        useApp().submitAssignment(assignment.id, assignmentFiles[assignment.id]);
+                                        submitAssignment(assignment.id, assignmentFiles[assignment.id]);
                                       }}
                                       className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all cursor-pointer shadow-md shadow-emerald-600/10"
                                     >
@@ -385,13 +452,43 @@ export default function CourseDetail() {
                 <h2 className="text-3xl font-headline font-medium text-violet-600 border-b border-violet-200 pb-4 mb-6 flex justify-between items-end">
                   Students <span className="text-sm font-bold text-violet-400 bg-violet-50 px-3 py-1 rounded-full">{courseStudents.length} students</span>
                 </h2>
-                <div className="space-y-2">
-                  {courseStudents.map(student => (
-                    <div key={student.id} className="flex items-center gap-4 py-4 px-2 hover:bg-slate-50 rounded-xl transition-colors border-b border-slate-50 last:border-0 cursor-pointer">
-                      <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full object-cover" />
-                      <span className="font-bold text-sm text-slate-700">{student.name}</span>
-                    </div>
-                  ))}
+                 <div className="space-y-2">
+                  {courseStudents.map(student => {
+                    const studentProfile = profiles.find(p => p.user_id === student.id);
+                    const hasRedFlags = studentProfile && studentProfile.weak_concepts.length > 0;
+
+                    return (
+                      <div key={student.id} className="group flex items-center justify-between py-4 px-4 hover:bg-slate-50 rounded-2xl transition-all border-b border-slate-50 last:border-0 cursor-pointer">
+                        <div className="flex items-center gap-4">
+                          <img src={student.avatar} alt={student.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-violet-500/20 transition-all" />
+                          <div>
+                            <span className="font-bold text-sm text-slate-800 block">{student.name}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Student ID: ...{student.id.slice(-4)}</span>
+                          </div>
+                        </div>
+                        
+                        {user?.role === 'professor' && (
+                          <div className="flex items-center gap-3">
+                            {hasRedFlags && (
+                              <div className="flex items-center gap-1.5 bg-red-50 text-red-600 px-3 py-1.5 rounded-full border border-red-100 animate-pulse">
+                                <span className="material-symbols-outlined text-sm">warning</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Red Flag</span>
+                              </div>
+                            )}
+                            <button 
+                              onClick={() => {
+                                setActiveStudentId(student.id);
+                                openModal('intervention');
+                              }}
+                              className="opacity-0 group-hover:opacity-100 bg-white border border-slate-200 text-slate-600 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-all"
+                            >
+                              Intervene
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -413,34 +510,42 @@ export default function CourseDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {courseStudents.map(student => (
-                    <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-5 sticky left-0 bg-white border-r border-slate-100 z-10">
-                        <div className="flex items-center gap-3">
-                          <img src={student.avatar} alt={student.name} className="w-8 h-8 rounded-full" />
-                          <span className="text-sm font-bold text-slate-700">{student.name}</span>
-                        </div>
-                      </td>
-                      {courseAssignments.map((a) => (
-                        <td key={a.id} className="p-5 text-center text-sm">
-                          {a.status === 'graded' ? (
-                            <span className="font-bold text-slate-700">88/100</span>
-                          ) : (
-                            <span className="text-slate-300 italic text-xs">Pending</span>
-                          )}
+                  {courseStudents.map(student => {
+                    const studentProfile = profiles.find(p => p.user_id === student.id);
+                    const redFlagCount = studentProfile?.weak_concepts.length || 0;
+
+                    return (
+                      <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="p-5 sticky left-0 bg-white border-r border-slate-100 z-10">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <img src={student.avatar} alt={student.name} className="w-8 h-8 rounded-full" />
+                              {redFlagCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>}
+                            </div>
+                            <span className="text-sm font-bold text-slate-700">{student.name}</span>
+                          </div>
                         </td>
-                      ))}
-                      {quizzes.filter(q => q.course_id === course_id).map(q => (
-                        <td key={q.id} className="p-5 text-center text-sm">
-                           {q.completed ? (
-                             <span className="font-bold text-indigo-600">{q.score}/100</span>
-                           ) : (
-                             <span className="text-amber-500 text-xs">In Progress</span>
-                           )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                        {courseAssignments.map((a) => (
+                          <td key={a.id} className="p-5 text-center text-sm">
+                            {a.status === 'graded' ? (
+                              <span className="font-bold text-slate-700 group-hover:text-violet-600 transition-colors">88%</span>
+                            ) : (
+                              <span className="text-slate-300 italic text-xs">Pending</span>
+                            )}
+                          </td>
+                        ))}
+                        {quizzes.filter(q => q.course_id === courseId).map(q => (
+                          <td key={q.id} className="p-5 text-center text-sm">
+                            {q.completed ? (
+                              <span className={`font-bold ${q.score < 50 ? 'text-red-500' : 'text-indigo-600'}`}>{q.score}%</span>
+                            ) : (
+                              <span className="text-amber-500 text-xs">In Progress</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

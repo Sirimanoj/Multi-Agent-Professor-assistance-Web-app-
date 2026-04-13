@@ -32,7 +32,8 @@ export type Assignment = {
   status: 'pending' | 'submitted' | 'graded' | 'missing';
   urgency: 'high' | 'medium' | 'low';
   topic?: string;
-  type: 'must-do' | 'may-do';
+  type: 'must-do' | 'may-do' | 'quiz' | 'project';
+  material_id?: string;
   created_at: string;
 };
 
@@ -85,6 +86,7 @@ export type LearningProfile = {
   badges: string[];
   quiz_history: any[];
   summary_history: any[];
+  learning_roadmap?: any;
   created_at: string;
   updated_at: string;
 };

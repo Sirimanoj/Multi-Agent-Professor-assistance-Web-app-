@@ -13,21 +13,30 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error("[adaptive-quiz] Missing Authorization header");
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401, headers: corsHeaders })
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader } } }
     )
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    if (authError || !user) throw new Error('Unauthorized')
+    if (authError || !user) {
+      console.error("[adaptive-quiz] Auth Error:", authError?.message || "User not found");
+      return new Response(JSON.stringify({ error: 'Unauthorized: ' + (authError?.message || 'Invalid session') }), { status: 401, headers: corsHeaders })
+    }
 
     const { materialId, courseId, topic } = await req.json()
 
-    // 1. Fetch Material Metadata
+    // 1. Fetch Material Metadata & Content
     const { data: material } = await supabaseClient
       .from('materials')
-      .select('title, type, url')
+      .select('title, type, url, content')
       .eq('id', materialId)
       .single();
 
@@ -41,28 +50,50 @@ serve(async (req) => {
     const userTopicUnderstanding = profile?.understanding_level?.[topic] || 50;
     const difficulty = userTopicUnderstanding > 75 ? 'Advanced (PhD level)' : (userTopicUnderstanding > 40 ? 'Intermediate (Undergraduate)' : 'Fundamental (Foundational)');
 
+    if (!material?.content || material.content.length < 100 || material.content.includes("pending")) {
+      return new Response(JSON.stringify({ 
+        error: "NO_MATERIAL_CONTENT", 
+        message: "The Professor Assistant is still analyzing this material. Please wait a moment for the 'Processing' status to clear." 
+      }), { status: 400, headers: corsHeaders });
+    }
+
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiKey) throw new Error('GEMINI_API_KEY not found');
 
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
     const prompt = `
-      You are a Professor AI specializing in creating rigorous adaptive assessments.
-      Topic: "${topic}"
-      Material Context: ${material ? `Based on source "${material.title}" (${material.type})` : 'General knowledge'}
-      Target Academic Level: ${difficulty}
+      You are a STRICT ROLE-PLAYING Quiz Generator AI. 
+      You MUST generate questions ONLY from the provided content below. 
+      Do NOT use any external knowledge or general facts not explicitly stated.
+
+      GROUNDING RULES:
+      1. Every question must be directly traceable to a specific sentence in the content.
+      2. If information is not present, do NOT create a question about it.
+      3. Use EXACT facts, terms, or concepts from the content.
+      4. Target Academic Level: ${difficulty}
+
+      QUIZ PARAMETERS:
+      - Topic: "${topic}"
+      - Material Title: "${material.title}"
+      - Question Count: 10
+      - Format: 4 options, exactly one correct answer.
+
+      PROVIDED CONTENT:
+      """
+      ${material.content}
+      """
       
-      Generate a 3-question multiple choice quiz. 
-      Each question must test deep conceptual understanding, not just rote memorization.
-      
+      OUTPUT REQUIREMENTS:
       Return ONLY a JSON array with this exact structure (no markdown backticks):
       [
         {
           "question": "string",
-          "options": ["A", "B", "C", "D"],
-          "correctAnswer": 0,
-          "explanation": "Detailed pedagogical explanation of why this choice is correct."
+          "options": ["string", "string", "string", "string"],
+          "correctAnswerIndex": number (0-3),
+          "explanation": "string",
+          "source_reference": "EXACT sentence or phrase from the content above that validates this question"
         }
       ]
     `;

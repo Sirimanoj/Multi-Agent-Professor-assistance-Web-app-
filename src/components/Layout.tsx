@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import AIChat from './AIChat';
@@ -9,6 +9,7 @@ import GlobalModals from './GlobalModals';
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const { notifications, theme, toggleTheme, markNotificationRead, openModal } = useApp();
+  const navigate = useNavigate();
   
   const [showNotifs, setShowNotifs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -123,7 +124,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         <aside className="hidden lg:flex flex-col fixed left-4 top-20 bottom-4 w-64 bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0px_10px_30px_rgba(93,63,211,0.15)] p-4 space-y-6 z-30 overflow-hidden">
           <div className="px-4 py-2">
             <h2 className="font-bold text-lg text-slate-900">Luminous Academy</h2>
-            <p className="font-manrope font-medium text-[10px] text-slate-400 uppercase tracking-widest">{user?.role === 'professor' ? 'Professor View' : 'Student View'}</p>
+            <p className="font-manrope font-medium text-[10px] text-slate-400 uppercase tracking-widest">
+              {user?.role === 'professor' ? (
+                <span className="text-indigo-600 font-bold">Professor View</span>
+              ) : (
+                <span className="text-emerald-600 font-bold">Student View</span>
+              )}
+            </p>
           </div>
           <nav className="flex-1 space-y-2">
             <NavLink to="/dashboard" className={sideNavClass}>
@@ -145,11 +152,11 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           </nav>
           <button 
-            onClick={() => openModal('course')}
+            onClick={() => user?.role === 'professor' ? openModal('course') : navigate('/classrooms')}
             className="bg-gradient-to-br from-violet-600 to-indigo-600 text-white mx-2 py-4 rounded-2xl font-bold text-sm shadow-[0px_10px_20px_rgba(99,102,241,0.2)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-lg">add_circle</span>
-            {user?.role === 'professor' ? 'Create Class' : 'Join Class'}
+            <span className="material-symbols-outlined text-lg">{user?.role === 'professor' ? 'add_circle' : 'group_add'}</span>
+            {user?.role === 'professor' ? 'Create Class' : 'View Classes'}
           </button>
           <div className="pt-4 border-t border-slate-100 space-y-1">
             <a onClick={() => openModal('help')} className="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-slate-800 rounded-xl transition-colors text-sm font-medium cursor-pointer">

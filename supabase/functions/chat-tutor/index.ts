@@ -26,15 +26,15 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) throw new Error('Unauthorized: Verification failed')
 
-    const { message, history, persona } = await req.json()
+    const { message, history, persona, context } = await req.json()
 
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiKey) throw new Error('GEMINI_API_KEY is not configured in Supabase Secrets');
 
     const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: { maxOutputTokens: 1024 }
+      model: "gemini-1.5-pro", // Upgrade to Pro for better grounding
+      generationConfig: { maxOutputTokens: 2048 }
     });
 
     // Persona-based System Prompt
@@ -44,7 +44,17 @@ serve(async (req) => {
       direct: "You are a high-performance academic assistant. Provide direct, concise, and technically accurate answers.",
     };
 
-    const systemInstruction = personas[persona] || "You are a helpful Professor AI assistant in a specialized academic environment.";
+    // Construct Grounding Context
+    let groundingContext = "";
+    if (context?.materials && Array.from(context.materials).length > 0) {
+      groundingContext = "\n\nUSE THESE COURSE MATERIALS FOR GROUNDING:\n" + 
+        context.materials.map((m: any) => `### DOCUMENT: ${m.title}\n${m.content}`).join("\n---\n");
+    }
+
+    const systemInstruction = 
+      (personas[persona] || "You are a helpful Professor AI assistant.") + 
+      "\n\nOnly use the provided course materials to answer questions. If the answer is not in the materials, state that clearly and offer to help with general concepts instead.\n" + 
+      groundingContext;
 
     // Gemini expects 'user' and 'model' roles
     const conversationArgs = (history || [])
@@ -58,7 +68,7 @@ serve(async (req) => {
        history: conversationArgs,
     });
 
-    const fullPrompt = `${systemInstruction}\n\nStudent asks: ${message}`;
+    const fullPrompt = `Student asks: ${message}`;
     const result = await chat.sendMessage(fullPrompt);
     const responseText = result.response.text();
 

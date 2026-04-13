@@ -4,9 +4,10 @@ import Layout from './components/Layout';
 import { useApp } from './context/AppContext';
 import { useAuth } from './context/AuthContext';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from './lib/supabase';
 
 export default function ProfessorDashboard() {
-  const { courses, assignments, uploadMaterial, addLinkMaterial, isGeneratingAssignment, openModal, openInterventionModal, profiles, usersList, notifications, markClassAttended } = useApp();
+  const { courses, assignments, uploadMaterial, addLinkMaterial, isUploading, isGeneratingAssignment, generateQuizAssignment, generateProjectAssignment, openModal, openInterventionModal, profiles, usersList, notifications, markClassAttended } = useApp();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLink, setIsUploadingLink] = useState(false);
@@ -43,6 +44,29 @@ export default function ProfessorDashboard() {
       setIsUploadingLink(true);
       await addLinkMaterial(url, courseId);
       setIsUploadingLink(false);
+    }
+  };
+
+  const handleAssignQuiz = async (courseId: string) => {
+    const topic = prompt("Enter the topic or chapter for this Quiz (e.g., 'Thermodynamics'):");
+    if (topic) {
+      // Fetch some materials for selection
+      const { data: mats } = await supabase.from('materials').select('id, title').eq('course_id', courseId).limit(5);
+      const matList = mats?.map((m, i) => `${i+1}. ${m.title}`).join('\n') || "No materials found";
+      const choice = prompt(`Select grounding material index (1-${mats?.length || 1}) or click Cancel for auto-search:\n${matList}`);
+      
+      const selectedMaterialId = (choice && mats?.[parseInt(choice)-1]) ? mats[parseInt(choice)-1].id : undefined;
+      
+      await generateQuizAssignment(topic, courseId, selectedMaterialId);
+      alert(`Quiz for "${topic}" generated and assigned!`);
+    }
+  };
+
+  const handleAssignProject = async (courseId: string) => {
+    const topic = prompt("Enter the focus area for this Project:");
+    if (topic) {
+      await generateProjectAssignment(topic, courseId);
+      alert(`Project for "${topic}" generated and assigned!`);
     }
   };
 
@@ -136,9 +160,12 @@ export default function ProfessorDashboard() {
             <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 mt-5">Struggling Track</h4>
             <ul className="space-y-3">
               {strugglingStudents?.map(p => (
-                <li key={p.user_id} onClick={() => openInterventionModal(p.user_id)} className="flex justify-between items-center text-sm border border-slate-100 bg-slate-50 p-3 rounded-xl cursor-pointer hover:bg-white hover:border-violet-200 hover:shadow-sm transition-all group">
-                  <span className="font-bold text-slate-700 truncate mr-2 group-hover:text-violet-600 flex items-center gap-2"><span className="material-symbols-outlined text-sm text-slate-300 group-hover:text-violet-400">monitoring</span> {getUserName(p.user_id)}</span>
-                  <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-bold uppercase truncate max-w-[120px]">{p.weak_concepts[0] || 'Multiple'}</span>
+                <li key={p.user_id} onClick={() => openInterventionModal(p.user_id)} className="flex justify-between items-center text-sm border border-red-200 bg-red-50 p-3 rounded-xl cursor-pointer hover:bg-white hover:border-red-300 hover:shadow-sm transition-all group">
+                  <span className="font-bold text-red-700 truncate mr-2 flex items-center gap-2"><span className="material-symbols-outlined text-sm text-red-400 group-hover:text-red-500 animate-pulse">priority_high</span> {getUserName(p.user_id)}</span>
+                  <div className="flex gap-2">
+                     <span className="text-[10px] bg-red-100 text-red-800 border border-red-200 px-2 py-1 rounded-md font-bold uppercase truncate max-w-[120px]">Score &lt; 30%</span>
+                     <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-bold uppercase truncate max-w-[120px] hidden md:inline-block">{p.weak_concepts[0] || 'Multiple'}</span>
+                  </div>
                 </li>
               ))}
               {(strugglingStudents?.length === 0) && <p className="text-xs text-slate-400 font-bold italic">No students currently flagged.</p>}
@@ -198,32 +225,47 @@ export default function ProfessorDashboard() {
                   <h3 className="font-bold text-xl mt-4 text-slate-800 group-hover:text-violet-600 transition-colors">{course.name}</h3>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">{course.term}</p>
                   
-                  <div className="mt-8 space-y-3">
+                  <div className="mt-8 grid grid-cols-2 gap-3">
                     <button 
                       onClick={() => triggerUpload(course.id)}
-                      className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[10px] uppercase tracking-widest group/btn"
+                      disabled={isUploading}
+                      className="w-full flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[9px] uppercase tracking-widest group/btn disabled:opacity-50 gap-2 h-20"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-lg opacity-50 group-hover/btn:opacity-100 transition-opacity">upload_file</span>
-                        Upload Material
-                      </div>
-                      <span className="material-symbols-outlined text-sm opacity-0 group-hover/btn:opacity-100 transition-all">add</span>
+                      <span className={`material-symbols-outlined text-2xl opacity-70 group-hover/btn:opacity-100 transition-opacity ${isUploading ? 'animate-spin' : ''}`}>
+                        {isUploading ? 'sync' : 'upload_file'}
+                      </span>
+                      {isUploading ? 'Uploading...' : 'Material'}
                     </button>
 
                     <button 
                       onClick={() => handleLinkUpload(course.id)}
                       disabled={isUploadingLink}
-                      className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[10px] uppercase tracking-widest group/btn"
+                      className="w-full flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-600 transition-all font-bold text-[9px] uppercase tracking-widest group/btn gap-2 h-20"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-lg opacity-50 group-hover/btn:opacity-100 transition-opacity">
-                          {isUploadingLink ? 'sync' : 'link'}
-                        </span>
-                        {isUploadingLink ? 'Adding Link...' : 'Add Resource Link'}
-                      </div>
-                      <span className={`material-symbols-outlined text-sm opacity-0 group-hover/btn:opacity-100 transition-all ${isUploadingLink ? 'animate-spin' : ''}`}>
-                        {isUploadingLink ? 'sync' : 'add'}
+                      <span className={`material-symbols-outlined text-2xl opacity-70 group-hover/btn:opacity-100 transition-opacity ${isUploadingLink ? 'animate-spin' : ''}`}>
+                        {isUploadingLink ? 'sync' : 'link'}
                       </span>
+                      {isUploadingLink ? 'Adding...' : 'Resource Link'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleAssignQuiz(course.id)}
+                      className="w-full flex flex-col items-center justify-center p-3 rounded-2xl bg-violet-50 border border-violet-100 text-violet-600 hover:bg-violet-600 hover:border-violet-600 hover:text-white transition-all font-bold text-[9px] uppercase tracking-widest group/btn gap-2 h-20 shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-2xl opacity-90 transition-opacity">
+                        quiz
+                      </span>
+                      Assign Quiz
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleAssignProject(course.id)}
+                      className="w-full flex flex-col items-center justify-center p-3 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all font-bold text-[9px] uppercase tracking-widest group/btn gap-2 h-20 shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-2xl opacity-90 transition-opacity">
+                        assignment_turned_in
+                      </span>
+                      Assign Project
                     </button>
                   </div>
                 </div>

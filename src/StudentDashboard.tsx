@@ -5,7 +5,7 @@ import { useAuth } from './context/AuthContext';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 export default function StudentDashboard() {
-  const { courses, assignments, submitAssignment, isGrading, profiles, openModal, usersList, isLoading: isAppLoading } = useApp();
+  const { courses, assignments, materials, submitAssignment, generateAdaptiveQuiz, isGrading, isGeneratingQuiz, profiles, openModal, usersList, isLoading: isAppLoading } = useApp();
   const { user } = useAuth();
   
   if (isAppLoading || !user) {
@@ -71,6 +71,40 @@ export default function StudentDashboard() {
             <h3 className="font-bold text-xs uppercase tracking-[0.2em] text-slate-400 relative z-10">Overall Grade</h3>
           </div>
         </section>
+
+        {/* Study Check Alert */}
+        {courses.length > 0 && (
+          <section className="bg-gradient-to-r from-violet-600 to-indigo-700 rounded-3xl p-6 text-white flex flex-col md:flex-row items-center justify-between shadow-lg shadow-violet-600/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-32 translate-x-32 group-hover:bg-white/20 transition-all duration-700"></div>
+            <div className="flex items-center gap-4 relative z-10 mb-4 md:mb-0">
+               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center animate-bounce">
+                 <span className="material-symbols-outlined text-2xl">notification_important</span>
+               </div>
+               <div>
+                 <h3 className="font-bold text-lg">New Material Uploaded</h3>
+                 <p className="text-violet-200 text-sm">Professor added "Macroeconomics.pdf". Agent analysis requires your input.</p>
+               </div>
+            </div>
+            <button 
+              onClick={() => {
+                const latestMaterial = materials.find(m => m.course_id === courses[0]?.id);
+                if (latestMaterial) {
+                  if (!latestMaterial.content) {
+                    alert("The Academic Agent is still processing this material. Please try again in 30 seconds.");
+                  } else {
+                    generateAdaptiveQuiz(latestMaterial.id, courses[0]?.name, courses[0]?.id);
+                  }
+                } else {
+                  openModal('quiz');
+                }
+              }} 
+              disabled={isGeneratingQuiz}
+              className="relative z-10 bg-white text-violet-600 px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isGeneratingQuiz ? 'AI Analyzing...' : 'Start Study Check'}
+            </button>
+          </section>
+        )}
 
         {/* Learning Profile Overview */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-4">
@@ -180,13 +214,36 @@ export default function StudentDashboard() {
                 </div>
                 <h4 className="text-2xl font-headline font-bold mb-3">{assignment.title}</h4>
                 <p className="text-slate-500 text-sm leading-relaxed mb-6">{assignment.description}</p>
-                <button 
-                  onClick={() => submitAssignment(assignment.id)}
-                  disabled={isGrading}
-                  className="text-violet-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all disabled:opacity-50"
-                >
-                  {isGrading ? 'Grading Assistant Analyzing...' : 'Submit Task'} <span className="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
+                {assignment.type === 'quiz' ? (
+                  <button 
+                    onClick={() => {
+                       generateAdaptiveQuiz('', assignment.topic || 'General Knowledge', assignment.course_id);
+                    }}
+                    disabled={isGrading || isGeneratingQuiz}
+                    className="text-violet-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all disabled:opacity-50"
+                  >
+                    {isGeneratingQuiz ? 'Generating Assessment...' : 'Start Quiz'} <span className="material-symbols-outlined text-sm">{isGeneratingQuiz ? 'sync' : 'quiz'}</span>
+                  </button>
+                ) : assignment.type === 'project' ? (
+                  <button 
+                    onClick={() => {
+                        alert('In a live environment, a file picker would open here. Marking project as submitted.');
+                        submitAssignment(assignment.id);
+                    }}
+                    disabled={isGrading}
+                    className="text-indigo-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all disabled:opacity-50"
+                  >
+                    {isGrading ? 'AI Evaluating...' : 'Upload Project Files'} <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => submitAssignment(assignment.id)}
+                    disabled={isGrading}
+                    className="text-violet-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all disabled:opacity-50"
+                  >
+                    {isGrading ? 'Grading Assistant Analyzing...' : 'Submit Task'} <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -217,6 +274,21 @@ export default function StudentDashboard() {
           </div>
         </section>
       </main>
+
+      {/* Global AI Loading Overlay */}
+      {isGeneratingQuiz && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
+           <div className="relative w-24 h-24 mb-8">
+             <div className="absolute inset-0 border-4 border-violet-100 rounded-full"></div>
+             <div className="absolute inset-0 border-4 border-violet-600 rounded-full border-t-transparent animate-spin"></div>
+             <div className="absolute inset-0 flex items-center justify-center">
+               <span className="material-symbols-outlined text-3xl text-violet-600">psychology</span>
+             </div>
+           </div>
+           <h2 className="text-2xl font-headline font-bold text-slate-800 animate-pulse">AI Professor is Drafting...</h2>
+           <p className="text-slate-500 mt-2 font-medium">Generating a personalized assessment based on course documents.</p>
+        </div>
+      )}
     </Layout>
   );
 }
